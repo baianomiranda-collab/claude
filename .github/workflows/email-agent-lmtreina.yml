@@ -1,0 +1,36 @@
+name: Email Agent LM Treina
+
+on:
+  schedule:
+    # Executa às 7h, 10h, 13h, 16h, 19h e 22h (horário de Brasília = UTC-3)
+    # Em UTC: 10h, 13h, 16h, 19h, 22h e 01h
+    - cron: '0 1,10,13,16,19,22 * * *'
+  workflow_dispatch:  # permite execução manual pelo GitHub
+
+jobs:
+  run-email-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Criar arquivo .env com credenciais
+        run: |
+          cat > B4/Email_LMTREINA/.env << 'EOF'
+          WEBMAIL_URL=${{ secrets.WEBMAIL_URL }}
+          WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
+          WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
+          WEBMAIL_URL_2=${{ secrets.WEBMAIL_URL_2 }}
+          WEBMAIL_USER_2=${{ secrets.WEBMAIL_USER_2 }}
+          WEBMAIL_PASS_2=${{ secrets.WEBMAIL_PASS_2 }}
+          EOF
+
+      - name: Executar agente de email
+        run: python B4/Email_LMTREINA/email_agent.py
