@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Claude\\\\B4\\\\obsidian\" 2>/dev/null && echo \"---\" && cat \"C:\\\\Users\\\\conta\\\\.claude\\\\settings.json\" 2>/dev/null || echo \"sem settings.json\")",
+      "Bash(cat \"C:\\\\Users\\\\conta\\\\AppData\\\\Roaming\\\\Claude\\\\claude_desktop_config.json\" 2>/dev/null || echo \"sem config desktop\")",
+      "Bash(ls \"C:\\\\Users\\\\conta\\\\AppData\\\\Roaming\\\\obsidian\" 2>/dev/null | head -20 && echo \"---vault check---\" && ls \"C:\\\\Claude\\\\B4\\\\obsidian\\\\.obsidian\\\\plugins\" 2>/dev/null || echo \"sem plugins\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(list\\(d.get\\('vaults',{}\\).values\\(\\)\\), indent=2\\)\\)\")",
+      "Bash(npx --version)",
+      "PowerShell(node --version)",
+      "PowerShell(npx --version)"
+    ]
+  }
+}
