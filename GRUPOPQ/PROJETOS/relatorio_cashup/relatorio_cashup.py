@@ -44,8 +44,8 @@ load_dotenv(BASE_DIR / ".env", override=True)
 URL = os.getenv("CASHUP_URL")
 LOGIN_USER = os.getenv("CASHUP_USER")
 LOGIN_PASS = os.getenv("CASHUP_PASS")
-WEBMAIL_USER = os.getenv("WEBMAIL_USER")
-WEBMAIL_PASS = os.getenv("WEBMAIL_PASS")
+GMAIL_USER = os.getenv("WEBMAIL_GMAIL_USER")
+GMAIL_PASS = (os.getenv("WEBMAIL_GMAIL_PASS") or "").replace(" ", "")
 EMAIL_PARA = os.getenv("EMAIL_PARA")
 
 RELATORIOS_DIR = BASE_DIR / "relatorios"
@@ -53,7 +53,7 @@ DEBUG_DIR = BASE_DIR / "debug"
 RELATORIOS_DIR.mkdir(exist_ok=True)
 DEBUG_DIR.mkdir(exist_ok=True)
 
-ENV_OBRIGATORIAS = ["CASHUP_URL", "CASHUP_USER", "CASHUP_PASS", "WEBMAIL_USER", "WEBMAIL_PASS", "EMAIL_PARA"]
+ENV_OBRIGATORIAS = ["CASHUP_URL", "CASHUP_USER", "CASHUP_PASS", "WEBMAIL_GMAIL_USER", "WEBMAIL_GMAIL_PASS", "EMAIL_PARA"]
 
 
 def verificar_ambiente() -> bool:
@@ -125,19 +125,11 @@ def baixar_relatorio() -> Path:
 
 
 def enviar_email(anexo: Path) -> None:
-    """Envia o relatorio por email usando as credenciais de webmail do .env."""
-    domain = WEBMAIL_USER.split("@")[1]
-    smtp_servers = [
-        ("mail." + domain, 587),
-        (domain, 587),
-        ("smtp." + domain, 587),
-        ("mail." + domain, 465),
-    ]
-
+    """Envia o relatorio por email via SMTP do Gmail (conta ORGANON)."""
     hoje_fmt = datetime.now().strftime("%d/%m/%Y")
 
     msg = MIMEMultipart()
-    msg["From"] = WEBMAIL_USER
+    msg["From"] = GMAIL_USER
     msg["To"] = EMAIL_PARA
     msg["Subject"] = f"Relatorio de Orcamentos Cash-UP - {hoje_fmt}"
 
@@ -156,25 +148,13 @@ def enviar_email(anexo: Path) -> None:
     part.add_header("Content-Disposition", f'attachment; filename="{anexo.name}"')
     msg.attach(part)
 
-    ultimo_erro = None
-    for host, port in smtp_servers:
-        try:
-            print(f"  Tentando SMTP {host}:{port}...")
-            if port == 465:
-                srv = smtplib.SMTP_SSL(host, port, timeout=30)
-            else:
-                srv = smtplib.SMTP(host, port, timeout=30)
-                srv.starttls()
-            srv.login(WEBMAIL_USER, WEBMAIL_PASS)
-            srv.sendmail(WEBMAIL_USER, [EMAIL_PARA], msg.as_string())
-            srv.quit()
-            print(f"  Email enviado para {EMAIL_PARA} via {host}:{port}")
-            return
-        except Exception as e:
-            print(f"    Falhou: {e}")
-            ultimo_erro = e
-
-    raise RuntimeError(f"Nao foi possivel enviar o email por nenhum servidor SMTP testado: {ultimo_erro}")
+    print("  Conectando SMTP smtp.gmail.com:587...")
+    srv = smtplib.SMTP("smtp.gmail.com", 587, timeout=30)
+    srv.starttls()
+    srv.login(GMAIL_USER, GMAIL_PASS)
+    srv.sendmail(GMAIL_USER, [EMAIL_PARA], msg.as_string())
+    srv.quit()
+    print(f"  Email enviado para {EMAIL_PARA} via smtp.gmail.com:587")
 
 
 def main():

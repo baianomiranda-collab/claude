@@ -14,7 +14,7 @@ py -3 relatorio_cashup.py
 2. Abre o menu **Orçamentos** — o próprio sistema já aplica por padrão o filtro
    **Período de Criação = últimos ~30 dias (rolling)** sem precisar de nenhuma configuração manual.
 3. Clica em **Exportar Excel** e baixa o relatório (`.xls` binário real, não HTML disfarçado) em `relatorios/Orcamentos_AAAA-MM-DD.xls`.
-4. Envia o arquivo por email (SMTP) para `EMAIL_PARA` definido no `.env`.
+4. Envia o arquivo por email via SMTP do Gmail (conta `sistemaorganon@gmail.com`) para `EMAIL_PARA` definido no `.env`.
 
 Fluxo 100% automático — sem pausa manual, sem interação humana.
 
@@ -33,14 +33,18 @@ talvez mais resumida), será preciso um login com esse botão habilitado.
 
 ## Configuração (`.env`)
 ```
-URL=https://www.cashup-pgquimica.com.br/
-USER=bruno@lmtreina.com.br
-PASS=<senha do Cash-UP>
+CASHUP_URL=https://www.cashup-pgquimica.com.br/
+CASHUP_USER=bruno@lmtreina.com.br
+CASHUP_PASS=<senha do Cash-UP>
 
-WEBMAIL_USER=bruno@lmtreina.com.br
-WEBMAIL_PASS=<senha do webmail LM Treina>
+WEBMAIL_GMAIL_USER=sistemaorganon@gmail.com
+WEBMAIL_GMAIL_PASS=<senha de app do Gmail — NÃO é a senha normal da conta>
 EMAIL_PARA=bruno@lmtreina.com.br
 ```
+
+`WEBMAIL_GMAIL_PASS` precisa ser uma **Senha de App** de 16 caracteres, gerada em
+`https://myaccount.google.com/apppasswords` (exige verificação em duas etapas ativada na conta
+`sistemaorganon@gmail.com`). A senha normal de login do Gmail não funciona para SMTP.
 
 ## Estrutura de pastas
 ```
@@ -59,8 +63,9 @@ relatorio_cashup/
 - **Login falha**: script salva screenshot em `debug/erro_login_<data>.png`.
 - **Grade de orçamentos não carrega**: screenshot em `debug/erro_grid_<data>.png` — pode ser lentidão do portal.
 - **Exportar Excel não baixa a tempo**: screenshot em `debug/erro_export_<data>.png`.
-- **Email não envia**: script tenta 4 combinações de servidor SMTP (`mail.<domínio>:587`, `<domínio>:587`,
-  `smtp.<domínio>:587`, `mail.<domínio>:465`) antes de desistir — mesmo padrão usado no agente de email LM Treina.
+- **Email não envia**: verificar se `WEBMAIL_GMAIL_PASS` é uma Senha de App válida (não a senha normal
+  da conta) e se a verificação em duas etapas continua ativa em `sistemaorganon@gmail.com`. Gmail bloqueia
+  login SMTP com a senha normal.
 
 ## Agendamento
 Roda sozinho todo dia às **6h (horário de Brasília)** via GitHub Actions —
@@ -72,7 +77,8 @@ Também pode ser disparado manualmente pela aba **Actions** do repositório no G
 - `CASHUP_URL` — `https://www.cashup-pgquimica.com.br/`
 - `CASHUP_USER` — email de login do Cash-UP
 - `CASHUP_PASS` — senha do Cash-UP
-- `WEBMAIL_USER` / `WEBMAIL_PASS` — já existem no repo (usados pelo agente de email LM Treina); reaproveitados aqui para o envio SMTP
+- `WEBMAIL_GMAIL_USER` — `sistemaorganon@gmail.com`
+- `WEBMAIL_GMAIL_PASS` — Senha de App do Gmail (16 caracteres, não a senha normal)
 - `EMAIL_PARA` — `bruno@lmtreina.com.br`
 
 Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`).
