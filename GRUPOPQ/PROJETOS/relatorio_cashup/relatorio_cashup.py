@@ -41,9 +41,9 @@ if sys.platform == "win32":
 BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env", override=True)
 
-URL = os.getenv("URL")
-LOGIN_USER = os.getenv("USER")
-LOGIN_PASS = os.getenv("PASS")
+URL = os.getenv("CASHUP_URL")
+LOGIN_USER = os.getenv("CASHUP_USER")
+LOGIN_PASS = os.getenv("CASHUP_PASS")
 WEBMAIL_USER = os.getenv("WEBMAIL_USER")
 WEBMAIL_PASS = os.getenv("WEBMAIL_PASS")
 EMAIL_PARA = os.getenv("EMAIL_PARA")
@@ -53,7 +53,7 @@ DEBUG_DIR = BASE_DIR / "debug"
 RELATORIOS_DIR.mkdir(exist_ok=True)
 DEBUG_DIR.mkdir(exist_ok=True)
 
-ENV_OBRIGATORIAS = ["URL", "USER", "PASS", "WEBMAIL_USER", "WEBMAIL_PASS", "EMAIL_PARA"]
+ENV_OBRIGATORIAS = ["CASHUP_URL", "CASHUP_USER", "CASHUP_PASS", "WEBMAIL_USER", "WEBMAIL_PASS", "EMAIL_PARA"]
 
 
 def verificar_ambiente() -> bool:

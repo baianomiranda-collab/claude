@@ -25,12 +25,29 @@ jobs:
           pip install -r GRUPOPQ/PROJETOS/relatorio_cashup/requirements.txt
           python -m playwright install --with-deps chromium
 
+      - name: Validar secrets configurados
+        run: |
+          faltando=""
+          check() { if [ -z "$2" ]; then faltando="$faltando $1"; fi; }
+          check CASHUP_URL "${{ secrets.CASHUP_URL }}"
+          check CASHUP_USER "${{ secrets.CASHUP_USER }}"
+          check CASHUP_PASS "${{ secrets.CASHUP_PASS }}"
+          check WEBMAIL_USER "${{ secrets.WEBMAIL_USER }}"
+          check WEBMAIL_PASS "${{ secrets.WEBMAIL_PASS }}"
+          check EMAIL_PARA "${{ secrets.EMAIL_PARA }}"
+          if [ -n "$faltando" ]; then
+            echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
+            echo "Configure em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "Todos os secrets necessarios estao configurados."
+
       - name: Criar arquivo .env com credenciais
         run: |
           cat > GRUPOPQ/PROJETOS/relatorio_cashup/.env << 'EOF'
-          URL=${{ secrets.CASHUP_URL }}
-          USER=${{ secrets.CASHUP_USER }}
-          PASS=${{ secrets.CASHUP_PASS }}
+          CASHUP_URL=${{ secrets.CASHUP_URL }}
+          CASHUP_USER=${{ secrets.CASHUP_USER }}
+          CASHUP_PASS=${{ secrets.CASHUP_PASS }}
           WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
           WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
           EMAIL_PARA=${{ secrets.EMAIL_PARA }}
