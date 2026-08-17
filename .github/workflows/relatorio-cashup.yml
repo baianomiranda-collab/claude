@@ -1,0 +1,40 @@
+name: Relatorio Orcamentos Cash-UP
+
+on:
+  schedule:
+    # Executa às 6h (horário de Brasília = UTC-3) -> 9h UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:  # permite execução manual pelo GitHub
+
+jobs:
+  run-relatorio-cashup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r GRUPOPQ/PROJETOS/relatorio_cashup/requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Criar arquivo .env com credenciais
+        run: |
+          cat > GRUPOPQ/PROJETOS/relatorio_cashup/.env << 'EOF'
+          URL=${{ secrets.CASHUP_URL }}
+          USER=${{ secrets.CASHUP_USER }}
+          PASS=${{ secrets.CASHUP_PASS }}
+          WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
+          WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
+          EMAIL_PARA=${{ secrets.EMAIL_PARA }}
+          EOF
+
+      - name: Executar relatório de orçamentos
+        run: python GRUPOPQ/PROJETOS/relatorio_cashup/relatorio_cashup.py
