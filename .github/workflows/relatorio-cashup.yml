@@ -9,7 +9,7 @@ on:
 jobs:
   run-relatorio-cashup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout código
@@ -32,6 +32,8 @@ jobs:
           check CASHUP_URL "${{ secrets.CASHUP_URL }}"
           check CASHUP_USER "${{ secrets.CASHUP_USER }}"
           check CASHUP_PASS "${{ secrets.CASHUP_PASS }}"
+          check WEBMAIL_USER "${{ secrets.WEBMAIL_USER }}"
+          check WEBMAIL_PASS "${{ secrets.WEBMAIL_PASS }}"
           check WEBMAIL_GMAIL_USER "${{ secrets.WEBMAIL_GMAIL_USER }}"
           check WEBMAIL_GMAIL_PASS "${{ secrets.WEBMAIL_GMAIL_PASS }}"
           check EMAIL_PARA "${{ secrets.EMAIL_PARA }}"
@@ -48,6 +50,8 @@ jobs:
           CASHUP_URL=${{ secrets.CASHUP_URL }}
           CASHUP_USER=${{ secrets.CASHUP_USER }}
           CASHUP_PASS=${{ secrets.CASHUP_PASS }}
+          WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
+          WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
           WEBMAIL_GMAIL_USER=${{ secrets.WEBMAIL_GMAIL_USER }}
           WEBMAIL_GMAIL_PASS=${{ secrets.WEBMAIL_GMAIL_PASS }}
           EMAIL_PARA=${{ secrets.EMAIL_PARA }}
