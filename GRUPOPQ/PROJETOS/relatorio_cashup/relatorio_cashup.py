@@ -66,7 +66,7 @@ CASHUP_SENDER_MATCH = "cashup-pgquimica.com.br"
 SUBJECT_MATCH_PARTES = ["relatorio", "orcamento"]  # comparado sem acento, minusculo
 
 POLL_INTERVAL = 20  # segundos entre tentativas
-TIMEOUT_EMAIL_CASHUP = 2 * 60  # espera maxima pelo email do Cash-UP
+TIMEOUT_EMAIL_CASHUP = 5 * 60  # espera maxima pelo email do Cash-UP
 
 
 def verificar_ambiente() -> bool:

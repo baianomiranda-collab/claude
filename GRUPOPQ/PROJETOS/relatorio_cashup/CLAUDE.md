@@ -22,7 +22,7 @@ dispara essa geração e, assim que o email chegar, encaminha ele direto para o 
    nada mais a fazer no browser).
 4. Faz **polling via IMAP** na caixa de `WEBMAIL_USER` (bruno@lmtreina.com.br, webmail LM Treina)
    até chegar um email novo de `cashup@cashup-pgquimica.com.br` com assunto
-   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 2 min).
+   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 5 min).
 5. **Encaminha esse email direto** (RFC822 completo, com o anexo original — não recompõe nada) para
    `EMAIL_PARA`, autenticando como `WEBMAIL_USER`.
 
@@ -80,11 +80,11 @@ relatorio_cashup/
 - **Grade de orçamentos não carrega**: screenshot em `debug/erro_grid_<data>.png`.
 - **Botão "Relatório Orçamentos" não encontrado/clicável**: screenshot em
   `debug/erro_botao_relatorio_<data>.png` — pode ser mudança de permissão de novo (já aconteceu antes).
-- **Email do Cash-UP nunca chega (timeout de 2 min)**: verificar se `CASHUP_USER` é realmente o email
+- **Email do Cash-UP nunca chega (timeout de 5 min)**: verificar se `CASHUP_USER` é realmente o email
   cadastrado no Cash-UP para receber o relatório — o sistema manda para "seu email cadastrado", não
   necessariamente para o que está logado. O tempo de entrega do Cash-UP é bem variável (já vimos de
-  ~1 min a mais de 15 min) — com o timeout reduzido para 2 min (a pedido), a execução pode falhar em
-  dias que o Cash-UP demorar mais para gerar o relatório.
+  ~1 min a mais de 15 min) — com o timeout de 5 min (a pedido), a execução pode falhar em dias que o
+  Cash-UP demorar mais para gerar o relatório.
 - **Erro de login SMTP/IMAP**: verificar `WEBMAIL_PASS` (webmail LM Treina).
 - **Erro SMTP 550 "Outgoing mail ... has been suspended"**: suspensão de anti-spam da hospedagem do
   domínio — não é bug do script. Evitar disparos manuais repetidos em sequência curta; a suspensão
