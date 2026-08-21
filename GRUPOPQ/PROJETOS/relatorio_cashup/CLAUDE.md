@@ -25,25 +25,28 @@ destinatário final:
    até chegar um email novo de `cashup@cashup-pgquimica.com.br` com assunto
    `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 15 min).
 5. **Encaminha esse email** (RFC822 completo, com o anexo original — não recompõe nada) para
-   `WEBMAIL_ORGANON_USER` (organon@solucoesb4.com.br), autenticando como `WEBMAIL_USER`.
-6. Faz polling via IMAP na caixa de `organon@solucoesb4.com.br` até esse encaminhamento chegar
-   (até 5 min — na prática costuma levar ~2 min).
-7. **Encaminha esse email** (de novo, sem recompor) para `EMAIL_PARA` — o destinatário final da regra
-   (bruno@solucoesb4.com.br), autenticando como `WEBMAIL_ORGANON_USER`.
+   `WEBMAIL_GMAIL_USER` (sistemaorganon@gmail.com), autenticando como `WEBMAIL_USER`.
+6. Faz polling via IMAP na caixa do Gmail (`sistemaorganon@gmail.com`) até esse encaminhamento chegar
+   (até 5 min).
+7. **Encaminha esse email** (de novo, sem recompor) para `EMAIL_PARA` — o destinatário final da regra,
+   autenticando como `WEBMAIL_GMAIL_USER`.
 
 Fluxo 100% automático — sem pausa manual, sem interação humana. Só existe espera (polling), nunca
 intervenção.
 
 ## Por que esse relay de 2 saltos em vez de anexar direto?
 Pedido explícito: usar o botão real **"Relatório Orçamentos"** (que só entrega por email, não por
-download) e fazer o email passar pela conta `organon@solucoesb4.com.br` antes de chegar ao destino
+download) e fazer o email passar pela conta `sistemaorganon@gmail.com` antes de chegar ao destino
 final — provavelmente para que todo relatório automatizado do Bruno chegue com a mesma "assinatura"
 de remetente consistente, em vez de vir direto de um domínio externo (`cashup-pgquimica.com.br`).
 
 Versão anterior deste projeto usava o botão **"Exportar Excel"** (download direto), porque na época
 "Relatório Orçamentos" não aparecia para esse login. Isso mudou — hoje o botão está visível e habilitado.
-O salto intermediário também já trocou uma vez: primeiro foi `sistemaorganon@gmail.com` (Gmail), depois
-passou a ser `organon@solucoesb4.com.br` (webmail próprio do domínio B4 Soluções).
+O salto intermediário já passou por 3 estados: começou em `sistemaorganon@gmail.com` (Gmail), foi trocado
+para `organon@solucoesb4.com.br` (webmail próprio B4), e voltou para `sistemaorganon@gmail.com` depois
+que a conta `organon@solucoesb4.com.br` foi **suspensa pela hospedagem por volume de envio** (erro SMTP
+550 "Outgoing mail ... has been suspended") durante os testes — Gmail não tem esse problema de suspensão
+por hospedagem compartilhada.
 
 ## Configuração (`.env`)
 ```
@@ -54,22 +57,24 @@ CASHUP_PASS=<senha do Cash-UP>
 WEBMAIL_USER=bruno@lmtreina.com.br
 WEBMAIL_PASS=<senha do webmail LM Treina>
 
-WEBMAIL_ORGANON_USER=organon@solucoesb4.com.br
-WEBMAIL_ORGANON_PASS=<senha da caixa organon@solucoesb4.com.br>
+WEBMAIL_GMAIL_USER=sistemaorganon@gmail.com
+WEBMAIL_GMAIL_PASS=<senha de app do Gmail — NÃO é a senha normal da conta>
 
-EMAIL_PARA=bruno@solucoesb4.com.br
+EMAIL_PARA=<destinatário final do relatório>
 ```
 
-`WEBMAIL_USER`/`WEBMAIL_PASS` e `WEBMAIL_ORGANON_USER`/`WEBMAIL_ORGANON_PASS` são usados tanto para ler
-a caixa (IMAP) quanto para enviar o encaminhamento seguinte (SMTP). O servidor de cada um é descoberto
-automaticamente a partir do domínio do email (`mail.<domínio>`, `<domínio>`, `smtp.`/`imap.<domínio>`,
-mesmo padrão usado no agente de email LM Treina) — não é preciso informar host manualmente.
+`WEBMAIL_GMAIL_PASS` precisa ser uma **Senha de App** de 16 caracteres, gerada em
+`https://myaccount.google.com/apppasswords` (exige verificação em duas etapas ativada na conta
+`sistemaorganon@gmail.com`). A senha normal de login do Gmail não funciona para SMTP/IMAP.
+
+`WEBMAIL_USER`/`WEBMAIL_PASS` são usados tanto para ler a caixa (IMAP, esperar o email do Cash-UP)
+quanto para enviar o primeiro encaminhamento (SMTP).
 
 ## Proteção contra emails antigos/duplicados
 Antes de disparar o relatório, o script registra o maior UID já existente em cada caixa (LM Treina e
-organon@solucoesb4.com.br). Só considera "o email certo" um que chegue com UID **maior** que esse ponto
-de partida — assim uma execução nunca pega por engano um relatório de um dia anterior (ou de outra
-pessoa) que já estava parado na caixa.
+Gmail). Só considera "o email certo" um que chegue com UID **maior** que esse ponto de partida — assim
+uma execução nunca pega por engano um relatório de um dia anterior (ou de outra pessoa) que já estava
+parado na caixa.
 
 ## Estrutura de pastas
 ```
@@ -91,10 +96,14 @@ relatorio_cashup/
 - **Email do Cash-UP nunca chega (timeout de 15 min)**: verificar se `CASHUP_USER` é realmente o email
   cadastrado no Cash-UP para receber o relatório — o sistema manda para "seu email cadastrado", não
   necessariamente para o que está logado.
-- **Encaminhamento não chega em organon@solucoesb4.com.br (timeout de 5 min)**: pode ser senha inválida,
-  ou o email caiu em spam — checar a pasta de spam dessa caixa.
-- **Erro de login SMTP/IMAP**: verificar `WEBMAIL_PASS` (webmail LM Treina) e `WEBMAIL_ORGANON_PASS`
-  (webmail organon@solucoesb4.com.br).
+- **Encaminhamento não chega no Gmail (timeout de 5 min)**: pode ser Senha de App inválida/expirada, ou
+  o email caiu em spam — checar a pasta de spam do `sistemaorganon@gmail.com`.
+- **Erro de login SMTP/IMAP**: verificar `WEBMAIL_PASS` (webmail LM Treina) e `WEBMAIL_GMAIL_PASS`
+  (Senha de App do Gmail — não a senha normal).
+- **Erro SMTP 550 "Outgoing mail ... has been suspended"**: suspensão de anti-spam da hospedagem do
+  domínio (aconteceu com `organon@solucoesb4.com.br` depois de testes seguidos) — não é bug do script.
+  Evitar disparos manuais repetidos em sequência curta; a suspensão costuma se resolver sozinha depois
+  de um tempo.
 
 ## Agendamento
 Roda sozinho todo dia às **18h (horário de Brasília)** via GitHub Actions —
@@ -109,8 +118,8 @@ Também pode ser disparado manualmente pela aba **Actions** do repositório no G
 - `CASHUP_PASS` — senha do Cash-UP
 - `WEBMAIL_USER` — `bruno@lmtreina.com.br`
 - `WEBMAIL_PASS` — senha do webmail LM Treina
-- `WEBMAIL_ORGANON_USER` — `organon@solucoesb4.com.br`
-- `WEBMAIL_ORGANON_PASS` — senha da caixa organon@solucoesb4.com.br
-- `EMAIL_PARA` — `bruno@solucoesb4.com.br`
+- `WEBMAIL_GMAIL_USER` — `sistemaorganon@gmail.com`
+- `WEBMAIL_GMAIL_PASS` — Senha de App do Gmail (16 caracteres, não a senha normal)
+- `EMAIL_PARA` — destinatário final do relatório
 
 Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`).
