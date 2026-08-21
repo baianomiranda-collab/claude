@@ -9,7 +9,7 @@ on:
 jobs:
   run-relatorio-cashup:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
 
     steps:
       - name: Checkout código
@@ -34,8 +34,6 @@ jobs:
           check CASHUP_PASS "${{ secrets.CASHUP_PASS }}"
           check WEBMAIL_USER "${{ secrets.WEBMAIL_USER }}"
           check WEBMAIL_PASS "${{ secrets.WEBMAIL_PASS }}"
-          check WEBMAIL_GMAIL_USER "${{ secrets.WEBMAIL_GMAIL_USER }}"
-          check WEBMAIL_GMAIL_PASS "${{ secrets.WEBMAIL_GMAIL_PASS }}"
           check EMAIL_PARA "${{ secrets.EMAIL_PARA }}"
           if [ -n "$faltando" ]; then
             echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
@@ -52,8 +50,6 @@ jobs:
           CASHUP_PASS=${{ secrets.CASHUP_PASS }}
           WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
           WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
-          WEBMAIL_GMAIL_USER=${{ secrets.WEBMAIL_GMAIL_USER }}
-          WEBMAIL_GMAIL_PASS=${{ secrets.WEBMAIL_GMAIL_PASS }}
           EMAIL_PARA=${{ secrets.EMAIL_PARA }}
           EOF
 

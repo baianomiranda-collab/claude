@@ -12,10 +12,8 @@ Fluxo 100% automatico, sem pausa manual:
      e envia por email para o endereco cadastrado (WEBMAIL_USER)
   4. Aguarda esse email chegar na caixa de bruno@lmtreina.com.br
      (remetente do dominio cashup-pgquimica.com.br)
-  5. Encaminha esse email (sem recompor) para sistemaorganon@gmail.com,
+  5. Encaminha esse email direto (sem recompor) para EMAIL_PARA (.env),
      usando as credenciais de bruno@lmtreina.com.br
-  6. Aguarda o email chegar na caixa do sistemaorganon@gmail.com
-  7. Encaminha esse email (sem recompor) para EMAIL_PARA (.env)
 
 DEPENDENCIAS:
   pip install playwright python-dotenv
@@ -53,8 +51,6 @@ LOGIN_USER = os.getenv("CASHUP_USER")
 LOGIN_PASS = os.getenv("CASHUP_PASS")
 WEBMAIL_USER = os.getenv("WEBMAIL_USER")
 WEBMAIL_PASS = os.getenv("WEBMAIL_PASS")
-GMAIL_USER = os.getenv("WEBMAIL_GMAIL_USER")
-GMAIL_PASS = (os.getenv("WEBMAIL_GMAIL_PASS") or "").replace(" ", "")
 EMAIL_PARA = os.getenv("EMAIL_PARA")
 
 DEBUG_DIR = BASE_DIR / "debug"
@@ -63,7 +59,6 @@ DEBUG_DIR.mkdir(exist_ok=True)
 ENV_OBRIGATORIAS = [
     "CASHUP_URL", "CASHUP_USER", "CASHUP_PASS",
     "WEBMAIL_USER", "WEBMAIL_PASS",
-    "WEBMAIL_GMAIL_USER", "WEBMAIL_GMAIL_PASS",
     "EMAIL_PARA",
 ]
 
@@ -72,7 +67,6 @@ SUBJECT_MATCH_PARTES = ["relatorio", "orcamento"]  # comparado sem acento, minus
 
 POLL_INTERVAL = 20  # segundos entre tentativas
 TIMEOUT_EMAIL_CASHUP = 15 * 60  # Cash-UP avisa "em alguns minutos"
-TIMEOUT_EMAIL_ORGANON = 5 * 60  # encaminhamento via SMTP costuma ser quase instantaneo
 
 
 def verificar_ambiente() -> bool:
@@ -179,10 +173,6 @@ def conectar_imap_lmtreina():
     return conectar_imap(WEBMAIL_USER, WEBMAIL_PASS, hosts)
 
 
-def conectar_imap_gmail():
-    return conectar_imap(GMAIL_USER, GMAIL_PASS, [("imap.gmail.com", 993)])
-
-
 def uid_maximo_atual(connector) -> int:
     imap = connector()
     imap.select("INBOX")
@@ -269,12 +259,10 @@ def main():
 
     domain_lm = WEBMAIL_USER.split("@")[1]
     smtp_hosts_lm = [("mail." + domain_lm, 587), (domain_lm, 587), ("smtp." + domain_lm, 587), ("mail." + domain_lm, 465)]
-    smtp_hosts_gmail = [("smtp.gmail.com", 587)]
 
     try:
-        print("\nRegistrando ponto de partida das caixas de entrada...")
+        print("\nRegistrando ponto de partida da caixa de entrada...")
         baseline_lm = uid_maximo_atual(conectar_imap_lmtreina)
-        baseline_og = uid_maximo_atual(conectar_imap_gmail)
 
         print("\nDisparando relatorio no Cash-UP...")
         disparar_relatorio()
@@ -284,16 +272,8 @@ def main():
         if uid1 is None:
             raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} dentro do prazo.")
 
-        print(f"\nEncaminhando para {GMAIL_USER}...")
-        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm)
-
-        print(f"\nAguardando email chegar em {GMAIL_USER} (ate {TIMEOUT_EMAIL_ORGANON // 60} min)...")
-        uid2 = aguardar_email(conectar_imap_gmail, baseline_og, WEBMAIL_USER, SUBJECT_MATCH_PARTES, TIMEOUT_EMAIL_ORGANON)
-        if uid2 is None:
-            raise RuntimeError(f"Email encaminhado nao chegou em {GMAIL_USER} dentro do prazo.")
-
         print(f"\nEncaminhando para {EMAIL_PARA}...")
-        encaminhar_email(conectar_imap_gmail, uid2, GMAIL_USER, EMAIL_PARA, GMAIL_USER, GMAIL_PASS, smtp_hosts_gmail)
+        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, EMAIL_PARA, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm)
 
     except Exception as e:
         print(f"\nERRO: {e}")
