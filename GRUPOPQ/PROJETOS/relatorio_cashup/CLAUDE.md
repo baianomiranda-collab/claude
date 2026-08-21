@@ -113,7 +113,7 @@ relatorio_cashup/
   costuma se resolver sozinha depois de um tempo.
 
 ## Agendamento
-Roda sozinho todo dia às **18h (horário de Brasília)** via GitHub Actions —
+Roda sozinho todo dia às **18h10 (horário de Brasília)** via GitHub Actions —
 `.github/workflows/relatorio-cashup.yml` (mesmo padrão do agente de email LM Treina).
 Também pode ser disparado manualmente pela aba **Actions** do repositório no GitHub
 (botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 25 minutos.

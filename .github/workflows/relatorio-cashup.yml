@@ -2,8 +2,8 @@ name: Relatorio Orcamentos Cash-UP
 
 on:
   schedule:
-    # Executa às 18h (horário de Brasília = UTC-3) -> 21h UTC
-    - cron: '0 21 * * *'
+    # Executa às 18h10 (horário de Brasília = UTC-3) -> 21h10 UTC
+    - cron: '10 21 * * *'
   workflow_dispatch:  # permite execução manual pelo GitHub
 
 jobs:
