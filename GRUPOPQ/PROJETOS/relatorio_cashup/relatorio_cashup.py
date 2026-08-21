@@ -6,14 +6,17 @@
 =============================================================
 Fluxo 100% automatico, sem pausa manual:
   1. Login no Cash-UP com credenciais do .env
-  2. Abre "Orcamentos" (o proprio sistema ja aplica o filtro
-     padrao de "Periodo de Criacao" = ultimos ~30 dias)
-  3. Clica em "Relatorio Orcamentos" — o Cash-UP gera o relatorio
-     e envia por email para o endereco cadastrado (WEBMAIL_USER)
+  2. Abre "Orcamentos" (menu superior -> submenu "Orcamentos")
+  3. Clica em "Carregar Filtros" e depois em "Relatorio Orcamentos"
+     — o Cash-UP gera o relatorio e envia por email para o
+     endereco cadastrado (WEBMAIL_USER)
   4. Aguarda esse email chegar na caixa de bruno@lmtreina.com.br
      (remetente do dominio cashup-pgquimica.com.br)
-  5. Encaminha esse email direto (sem recompor) para EMAIL_PARA (.env),
+  5. Encaminha esse email (sem recompor) para sistemaorganon@gmail.com,
      usando as credenciais de bruno@lmtreina.com.br
+  6. Aguarda o email chegar na caixa do sistemaorganon@gmail.com
+  7. Encaminha esse email (sem recompor) para os destinatarios finais
+     em EMAIL_PARA (.env, lista separada por virgula)
 
 DEPENDENCIAS:
   pip install playwright python-dotenv
@@ -51,7 +54,9 @@ LOGIN_USER = os.getenv("CASHUP_USER")
 LOGIN_PASS = os.getenv("CASHUP_PASS")
 WEBMAIL_USER = os.getenv("WEBMAIL_USER")
 WEBMAIL_PASS = os.getenv("WEBMAIL_PASS")
-EMAIL_PARA = os.getenv("EMAIL_PARA")
+GMAIL_USER = os.getenv("WEBMAIL_GMAIL_USER")
+GMAIL_PASS = (os.getenv("WEBMAIL_GMAIL_PASS") or "").replace(" ", "")
+EMAIL_PARA_LIST = [e.strip() for e in (os.getenv("EMAIL_PARA") or "").split(",") if e.strip()]
 
 DEBUG_DIR = BASE_DIR / "debug"
 DEBUG_DIR.mkdir(exist_ok=True)
@@ -59,6 +64,7 @@ DEBUG_DIR.mkdir(exist_ok=True)
 ENV_OBRIGATORIAS = [
     "CASHUP_URL", "CASHUP_USER", "CASHUP_PASS",
     "WEBMAIL_USER", "WEBMAIL_PASS",
+    "WEBMAIL_GMAIL_USER", "WEBMAIL_GMAIL_PASS",
     "EMAIL_PARA",
 ]
 
@@ -66,7 +72,8 @@ CASHUP_SENDER_MATCH = "cashup-pgquimica.com.br"
 SUBJECT_MATCH_PARTES = ["relatorio", "orcamento"]  # comparado sem acento, minusculo
 
 POLL_INTERVAL = 20  # segundos entre tentativas
-TIMEOUT_EMAIL_CASHUP = 5 * 60  # espera maxima pelo email do Cash-UP
+TIMEOUT_EMAIL_CASHUP = 5 * 60    # espera maxima pelo email do Cash-UP em WEBMAIL_USER
+TIMEOUT_EMAIL_ORGANON = 5 * 60   # espera maxima pelo encaminhamento chegar em GMAIL_USER
 
 
 def verificar_ambiente() -> bool:
@@ -74,6 +81,9 @@ def verificar_ambiente() -> bool:
     faltando = [k for k in ENV_OBRIGATORIAS if not os.getenv(k)]
     if faltando:
         print(f"  ERRO: variaveis faltando no .env: {', '.join(faltando)}")
+        return False
+    if not EMAIL_PARA_LIST:
+        print("  ERRO: EMAIL_PARA nao tem nenhum destinatario valido")
         return False
     print("  OK: .env com todas as variaveis necessarias")
     return True
@@ -104,7 +114,7 @@ def decodificar_header(raw) -> str:
 
 
 def disparar_relatorio() -> None:
-    """Faz login no Cash-UP, abre Orcamentos e clica em 'Relatorio Orcamentos'."""
+    """Faz login no Cash-UP, abre Orcamentos, carrega filtros e clica em 'Relatorio Orcamentos'."""
     hoje = datetime.now().strftime("%Y-%m-%d")
 
     with sync_playwright() as p:
@@ -129,8 +139,15 @@ def disparar_relatorio() -> None:
             browser.close()
             raise RuntimeError("Login parece ter falhado (ainda na tela de login).")
 
-        print("  Login OK. Abrindo Orcamentos...")
+        # Menu superior "Orcamentos" abre um submenu com o item "Orcamentos"
+        # (mesmo texto duas vezes) que precisa ser clicado para navegar de fato.
+        print("  Login OK. Abrindo Orçamentos...")
         page.click("text=Orçamentos")
+        page.wait_for_timeout(500)
+        try:
+            page.locator("text=Orçamentos").last.click(timeout=3000)
+        except PWTimeout:
+            pass  # alguns logins ja navegam direto no primeiro clique
         page.wait_for_load_state("networkidle", timeout=30000)
 
         try:
@@ -139,6 +156,15 @@ def disparar_relatorio() -> None:
             page.screenshot(path=str(DEBUG_DIR / f"erro_grid_{hoje}.png"))
             browser.close()
             raise RuntimeError("Grade de orcamentos nao carregou a tempo.")
+
+        print("  Carregando filtros salvos...")
+        try:
+            page.locator("text=Carregar Filtros").first.click(timeout=10000)
+        except PWTimeout:
+            page.screenshot(path=str(DEBUG_DIR / f"erro_carregar_filtros_{hoje}.png"))
+            browser.close()
+            raise RuntimeError("Botao 'Carregar Filtros' nao encontrado/clicavel.")
+        page.wait_for_timeout(2000)
 
         print("  Clicando em 'Relatorio Orcamentos'...")
         try:
@@ -171,6 +197,10 @@ def conectar_imap_lmtreina():
     domain = WEBMAIL_USER.split("@")[1]
     hosts = [("mail." + domain, 993), (domain, 993), ("webmail." + domain, 993), ("imap." + domain, 993)]
     return conectar_imap(WEBMAIL_USER, WEBMAIL_PASS, hosts)
+
+
+def conectar_imap_gmail():
+    return conectar_imap(GMAIL_USER, GMAIL_PASS, [("imap.gmail.com", 993)])
 
 
 def uid_maximo_atual(connector) -> int:
@@ -214,8 +244,13 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
     return None
 
 
-def encaminhar_email(connector_imap, uid: int, de: str, para: str, smtp_user: str, smtp_pass: str, smtp_hosts: list[tuple[str, int]]) -> None:
-    """Busca o email completo (com anexo) e reenvia como esta, so trocando From/To."""
+def encaminhar_email(connector_imap, uid: int, de: str, para, smtp_user: str, smtp_pass: str, smtp_hosts: list[tuple[str, int]]) -> None:
+    """Busca o email completo (com anexo) e reenvia como esta, so trocando From/To.
+
+    `para` aceita um unico endereco (str) ou uma lista de enderecos.
+    """
+    destinatarios = [para] if isinstance(para, str) else list(para)
+
     imap = connector_imap()
     imap.select("INBOX")
     typ, msg_data = imap.uid("fetch", str(uid).encode(), "(RFC822)")
@@ -227,7 +262,7 @@ def encaminhar_email(connector_imap, uid: int, de: str, para: str, smtp_user: st
         if header in msg:
             del msg[header]
     msg["From"] = de
-    msg["To"] = para
+    msg["To"] = ", ".join(destinatarios)
 
     ultimo_erro = None
     for host, port in smtp_hosts:
@@ -238,14 +273,14 @@ def encaminhar_email(connector_imap, uid: int, de: str, para: str, smtp_user: st
                 srv = smtplib.SMTP(host, port, timeout=30)
                 srv.starttls()
             srv.login(smtp_user, smtp_pass)
-            srv.sendmail(de, [para], msg.as_bytes())
+            srv.sendmail(de, destinatarios, msg.as_bytes())
             srv.quit()
-            print(f"  Encaminhado de {de} para {para} via {host}:{port}")
+            print(f"  Encaminhado de {de} para {', '.join(destinatarios)} via {host}:{port}")
             return
         except Exception as e:
             ultimo_erro = e
 
-    raise RuntimeError(f"Nao foi possivel encaminhar o email de {de} para {para}: {ultimo_erro}")
+    raise RuntimeError(f"Nao foi possivel encaminhar o email de {de} para {', '.join(destinatarios)}: {ultimo_erro}")
 
 
 def main():
@@ -259,10 +294,12 @@ def main():
 
     domain_lm = WEBMAIL_USER.split("@")[1]
     smtp_hosts_lm = [("mail." + domain_lm, 587), (domain_lm, 587), ("smtp." + domain_lm, 587), ("mail." + domain_lm, 465)]
+    smtp_hosts_gmail = [("smtp.gmail.com", 587)]
 
     try:
-        print("\nRegistrando ponto de partida da caixa de entrada...")
+        print("\nRegistrando ponto de partida das caixas de entrada...")
         baseline_lm = uid_maximo_atual(conectar_imap_lmtreina)
+        baseline_og = uid_maximo_atual(conectar_imap_gmail)
 
         print("\nDisparando relatorio no Cash-UP...")
         disparar_relatorio()
@@ -272,8 +309,16 @@ def main():
         if uid1 is None:
             raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} dentro do prazo.")
 
-        print(f"\nEncaminhando para {EMAIL_PARA}...")
-        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, EMAIL_PARA, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm)
+        print(f"\nEncaminhando para {GMAIL_USER}...")
+        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm)
+
+        print(f"\nAguardando email chegar em {GMAIL_USER} (ate {TIMEOUT_EMAIL_ORGANON // 60} min)...")
+        uid2 = aguardar_email(conectar_imap_gmail, baseline_og, WEBMAIL_USER, SUBJECT_MATCH_PARTES, TIMEOUT_EMAIL_ORGANON)
+        if uid2 is None:
+            raise RuntimeError(f"Email encaminhado nao chegou em {GMAIL_USER} dentro do prazo.")
+
+        print(f"\nEncaminhando para {', '.join(EMAIL_PARA_LIST)}...")
+        encaminhar_email(conectar_imap_gmail, uid2, GMAIL_USER, EMAIL_PARA_LIST, GMAIL_USER, GMAIL_PASS, smtp_hosts_gmail)
 
     except Exception as e:
         print(f"\nERRO: {e}")
