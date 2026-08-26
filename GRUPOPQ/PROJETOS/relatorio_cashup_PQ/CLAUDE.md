@@ -128,6 +128,12 @@ relatorio_cashup_PQ/
 ```
 
 ## Solução de problemas
+> Quando a execução falha via GitHub Actions, os screenshots de `debug/` são publicados como
+> **artifact do run** (aba do run em Actions → "Artifacts", nome `debug-cashup-pq-<run_id>`,
+> retido por 14 dias) — antes disso eles só existiam no runner efêmero e eram perdidos ao final
+> da execução, mesmo em falha. Foi assim que a falha do run manual de 26/08/2026 ficou sem
+> diagnóstico (nenhum artifact disponível) — ver "Origem deste projeto" acima.
+
 - **Login no Cash-UP falha**: screenshot em `debug/erro_login_<data>.png`.
 - **Grade de orçamentos não carrega**: screenshot em `debug/erro_grid_<data>.png`.
 - **Botão "Carregar Filtros" não encontrado/clicável**: screenshot em

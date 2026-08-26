@@ -110,6 +110,11 @@ relatorio_cashup_PG/
 ```
 
 ## Solução de problemas
+> Quando a execução falha via GitHub Actions, os screenshots de `debug/` são publicados como
+> **artifact do run** (aba do run em Actions → "Artifacts", nome `debug-cashup-pg-<run_id>`,
+> retido por 14 dias) — antes disso eles só existiam no runner efêmero e eram perdidos ao final
+> da execução, mesmo em falha.
+
 - **Login no Cash-UP falha**: screenshot em `debug/erro_login_<data>.png`.
 - **Grade de orçamentos não carrega**: screenshot em `debug/erro_grid_<data>.png`.
 - **Botão "Carregar Filtros" não encontrado/clicável**: screenshot em

@@ -59,3 +59,12 @@ jobs:
 
       - name: Executar relatório de orçamentos
         run: python GRUPOPQ/PROJETOS/relatorio_cashup_PG/relatorio_cashup.py
+
+      - name: Upload screenshots de debug (se houve falha)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-cashup-pg-${{ github.run_id }}
+          path: GRUPOPQ/PROJETOS/relatorio_cashup_PG/debug/
+          retention-days: 14
+          if-no-files-found: ignore
