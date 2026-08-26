@@ -46,12 +46,14 @@ Criado em 26/08/2026 como duplicata de `relatorio_cashup_PG` (que por sua vez fo
 `relatorio_cashup` nessa mesma data, para não confundir os dois projetos). Mesma lógica, mesmo
 fluxo — só o portal de origem muda.
 
-> **Atenção — presunções assumidas na duplicação, a confirmar por Bruno:**
-> - `CASHUP_USER`/`CASHUP_PASS` foram copiados do `.env` da PG (mesmo login). Se o Cash-UP da
->   Pernambuco Química usa credenciais diferentes, atualizar o `.env` local e os secrets do GitHub.
-> - `EMAIL_PARA` foi mantido igual ao da PG (`alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,
->   bruno@solucoesb4.com.br`) — confirmar se esses são de fato os destinatários corretos para o
->   relatório da Pernambuco Química, já que um dos endereços é do domínio `pgquimica.com.br`.
+> **Confirmado por Bruno em 26/08/2026:**
+> - `CASHUP_USER`/`CASHUP_PASS` iguais aos da PG (mesmo login) — mantido.
+> - `EMAIL_PARA` da PQ **não** inclui `alexandre.azevedo@pgquimica.com.br` (esse é destinatário só
+>   da PG). Lista final da PQ: `graco@grupopq.com,bruno@solucoesb4.com.br`. Por isso a PQ usa um
+>   secret próprio no GitHub (`EMAIL_PARA_PQ`), já que as duas listas divergem — ver "Secrets"
+>   abaixo.
+>
+> **Atenção — presunção ainda não confirmada:**
 > - `CASHUP_SENDER_MATCH` foi ajustado para `cashup-pernambucoquimica.com.br` (mesmo padrão de
 >   domínio do remetente da PG, só trocando a empresa) — **isto é uma suposição, não confirmada**.
 >   Se o primeiro email real do Cash-UP da PQ chegar de um domínio diferente, o polling do passo 4
@@ -80,7 +82,7 @@ WEBMAIL_PASS=<senha do webmail LM Treina>
 WEBMAIL_GMAIL_USER=sistemaorganon@gmail.com
 WEBMAIL_GMAIL_PASS=<senha de app do Gmail — NÃO é a senha normal da conta>
 
-EMAIL_PARA=alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br
+EMAIL_PARA=graco@grupopq.com,bruno@solucoesb4.com.br
 ```
 
 `WEBMAIL_GMAIL_PASS` precisa ser uma **Senha de App** de 16 caracteres, gerada em
@@ -145,16 +147,18 @@ repositório no GitHub (botão "Run workflow"), sem precisar do computador local
 job: 25 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
-Nomes de secrets específicos da PQ (para não colidir com os da PG no mesmo repositório):
+Nomes de secrets específicos da PQ (para não colidir com os da PG no mesmo repositório — os dois
+projetos usam portais e listas de destinatários diferentes):
 - `CASHUP_PQ_URL` — `https://www.cashup-pernambucoquimica.com.br/`
 - `CASHUP_PQ_USER` — email de login do Cash-UP
 - `CASHUP_PQ_PASS` — senha do Cash-UP
+- `EMAIL_PARA_PQ` — `graco@grupopq.com,bruno@solucoesb4.com.br` (diferente do `EMAIL_PARA` da PG,
+  que inclui também `alexandre.azevedo@pgquimica.com.br`)
 
 Secrets reaproveitados da PG (mesmos valores, já devem existir no repositório):
 - `WEBMAIL_USER` — `bruno@lmtreina.com.br`
 - `WEBMAIL_PASS` — senha do webmail LM Treina
 - `WEBMAIL_GMAIL_USER` — `sistemaorganon@gmail.com`
 - `WEBMAIL_GMAIL_PASS` — Senha de App do Gmail (não é a senha normal da conta)
-- `EMAIL_PARA` — `alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br`
 
 Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`).

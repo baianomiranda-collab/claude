@@ -37,7 +37,7 @@ jobs:
           check WEBMAIL_PASS "${{ secrets.WEBMAIL_PASS }}"
           check WEBMAIL_GMAIL_USER "${{ secrets.WEBMAIL_GMAIL_USER }}"
           check WEBMAIL_GMAIL_PASS "${{ secrets.WEBMAIL_GMAIL_PASS }}"
-          check EMAIL_PARA "${{ secrets.EMAIL_PARA }}"
+          check EMAIL_PARA_PQ "${{ secrets.EMAIL_PARA_PQ }}"
           if [ -n "$faltando" ]; then
             echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
             echo "Configure em Settings > Secrets and variables > Actions."
@@ -55,7 +55,7 @@ jobs:
           WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
           WEBMAIL_GMAIL_USER=${{ secrets.WEBMAIL_GMAIL_USER }}
           WEBMAIL_GMAIL_PASS=${{ secrets.WEBMAIL_GMAIL_PASS }}
-          EMAIL_PARA=${{ secrets.EMAIL_PARA }}
+          EMAIL_PARA=${{ secrets.EMAIL_PARA_PQ }}
           EOF
 
       - name: Executar relatório de orçamentos
