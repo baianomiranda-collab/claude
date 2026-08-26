@@ -47,14 +47,14 @@ jobs:
       - name: Criar arquivo .env com credenciais
         run: |
           cat > GRUPOPQ/PROJETOS/relatorio_cashup_PG/.env << 'EOF'
-          CASHUP_URL=${{ secrets.CASHUP_PG_URL }}
-          CASHUP_USER=${{ secrets.CASHUP_PG_USER }}
-          CASHUP_PASS=${{ secrets.CASHUP_PG_PASS }}
-          WEBMAIL_USER=${{ secrets.CASHUP_WEBMAIL_PG_USER }}
-          WEBMAIL_PASS=${{ secrets.CASHUP_WEBMAIL_PG_PASS }}
-          WEBMAIL_GMAIL_USER=${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_USER }}
-          WEBMAIL_GMAIL_PASS=${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_PASS }}
-          EMAIL_PARA_PG=${{ secrets.CASHUP_EMAIL_PARA_PG }}
+          CASHUP_PG_URL=${{ secrets.CASHUP_PG_URL }}
+          CASHUP_PG_USER=${{ secrets.CASHUP_PG_USER }}
+          CASHUP_PG_PASS=${{ secrets.CASHUP_PG_PASS }}
+          CASHUP_WEBMAIL_PG_USER=${{ secrets.CASHUP_WEBMAIL_PG_USER }}
+          CASHUP_WEBMAIL_PG_PASS=${{ secrets.CASHUP_WEBMAIL_PG_PASS }}
+          CASHUP_WEBMAIL_GMAIL_PG_USER=${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_USER }}
+          CASHUP_WEBMAIL_GMAIL_PG_PASS=${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_PASS }}
+          CASHUP_EMAIL_PARA_PG=${{ secrets.CASHUP_EMAIL_PARA_PG }}
           EOF
 
       - name: Executar relatório de orçamentos
