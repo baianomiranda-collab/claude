@@ -122,18 +122,20 @@ Também pode ser disparado manualmente pela aba **Actions** do repositório no G
 (botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 25 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
-- `CASHUP_URL` — `https://www.cashup-pgquimica.com.br/`
-- `CASHUP_USER` — email de login do Cash-UP
-- `CASHUP_PASS` — senha do Cash-UP
-- `WEBMAIL_USER` — `bruno@lmtreina.com.br`
-- `WEBMAIL_PASS` — senha do webmail LM Treina
-- `WEBMAIL_GMAIL_USER` — `sistemaorganon@gmail.com`
-- `WEBMAIL_GMAIL_PASS` — Senha de App do Gmail (não é a senha normal da conta)
-- `EMAIL_PARA_PG` — `alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br`
+Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PG` (recriados por Bruno em
+26/08/2026 para não colidir com os equivalentes da PQ — nenhum secret é mais compartilhado entre os
+dois projetos):
+- `CASHUP_PG_URL` — `https://www.cashup-pgquimica.com.br/`
+- `CASHUP_PG_USER` — email de login do Cash-UP
+- `CASHUP_PG_PASS` — senha do Cash-UP
+- `CASHUP_WEBMAIL_PG_USER` — `bruno@lmtreina.com.br`
+- `CASHUP_WEBMAIL_PG_PASS` — senha do webmail LM Treina
+- `CASHUP_WEBMAIL_GMAIL_PG_USER` — `sistemaorganon@gmail.com`
+- `CASHUP_WEBMAIL_GMAIL_PG_PASS` — Senha de App do Gmail (não é a senha normal da conta)
+- `CASHUP_EMAIL_PARA_PG` — `alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br`
 
-Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`).
-
-> **Atenção:** `WEBMAIL_GMAIL_USER`/`WEBMAIL_GMAIL_PASS` tinham sido marcados como não usados numa
-> versão anterior deste projeto e podem ter sido apagados dos secrets do GitHub. Confirme que os dois
-> existem e estão corretos em Settings → Secrets antes de confiar na próxima execução agendada —
-> sem eles o job falha na etapa "Validar secrets configurados".
+Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`). Dentro do
+`.env` local as variáveis continuam com os nomes originais (`CASHUP_URL`, `WEBMAIL_USER`, etc. — sem
+sufixo `_PG`), já que o script `relatorio_cashup.py` lê esses nomes; o sufixo `_PG` existe só nos
+secrets do GitHub, para diferenciar do projeto PQ no mesmo repositório. O workflow
+(`relatorio-cashup-pg.yml`) faz essa tradução ao montar o `.env` durante a execução.

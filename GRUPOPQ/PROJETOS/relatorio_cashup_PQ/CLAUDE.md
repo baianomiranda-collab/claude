@@ -147,18 +147,20 @@ repositório no GitHub (botão "Run workflow"), sem precisar do computador local
 job: 25 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
-Nomes de secrets específicos da PQ (para não colidir com os da PG no mesmo repositório — os dois
-projetos usam portais e listas de destinatários diferentes):
+Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PQ` (recriados por Bruno em
+26/08/2026 — nenhum secret é mais compartilhado com o projeto PG, nem mesmo webmail/Gmail):
 - `CASHUP_PQ_URL` — `https://www.cashup-pernambucoquimica.com.br/`
 - `CASHUP_PQ_USER` — email de login do Cash-UP
 - `CASHUP_PQ_PASS` — senha do Cash-UP
-- `EMAIL_PARA_PQ` — `graco@grupopq.com,bruno@solucoesb4.com.br` (diferente do `EMAIL_PARA_PG` da PG,
-  que inclui também `alexandre.azevedo@pgquimica.com.br`)
+- `CASHUP_WEBMAIL_PQ_USER` — `bruno@lmtreina.com.br`
+- `CASHUP_WEBMAIL_PQ_PASS` — senha do webmail LM Treina
+- `CASHUP_WEBMAIL_GMAIL_PQ_USER` — `sistemaorganon@gmail.com`
+- `CASHUP_WEBMAIL_GMAIL_PQ_PASS` — Senha de App do Gmail (não é a senha normal da conta)
+- `CASHUP_EMAIL_PARA_PQ` — `graco@grupopq.com,bruno@solucoesb4.com.br` (diferente do
+  `CASHUP_EMAIL_PARA_PG` da PG, que inclui também `alexandre.azevedo@pgquimica.com.br`)
 
-Secrets reaproveitados da PG (mesmos valores, já devem existir no repositório):
-- `WEBMAIL_USER` — `bruno@lmtreina.com.br`
-- `WEBMAIL_PASS` — senha do webmail LM Treina
-- `WEBMAIL_GMAIL_USER` — `sistemaorganon@gmail.com`
-- `WEBMAIL_GMAIL_PASS` — Senha de App do Gmail (não é a senha normal da conta)
-
-Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`).
+Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`). Dentro do
+`.env` local as variáveis continuam com os nomes originais (`CASHUP_URL`, `WEBMAIL_USER`, etc. — sem
+sufixo `_PQ`), já que o script `relatorio_cashup.py` lê esses nomes; o sufixo `_PQ` existe só nos
+secrets do GitHub. O workflow (`relatorio-cashup-pq.yml`) faz essa tradução ao montar o `.env`
+durante a execução.

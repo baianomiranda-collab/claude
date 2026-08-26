@@ -33,11 +33,11 @@ jobs:
           check CASHUP_PQ_URL "${{ secrets.CASHUP_PQ_URL }}"
           check CASHUP_PQ_USER "${{ secrets.CASHUP_PQ_USER }}"
           check CASHUP_PQ_PASS "${{ secrets.CASHUP_PQ_PASS }}"
-          check WEBMAIL_USER "${{ secrets.WEBMAIL_USER }}"
-          check WEBMAIL_PASS "${{ secrets.WEBMAIL_PASS }}"
-          check WEBMAIL_GMAIL_USER "${{ secrets.WEBMAIL_GMAIL_USER }}"
-          check WEBMAIL_GMAIL_PASS "${{ secrets.WEBMAIL_GMAIL_PASS }}"
-          check EMAIL_PARA_PQ "${{ secrets.EMAIL_PARA_PQ }}"
+          check CASHUP_WEBMAIL_PQ_USER "${{ secrets.CASHUP_WEBMAIL_PQ_USER }}"
+          check CASHUP_WEBMAIL_PQ_PASS "${{ secrets.CASHUP_WEBMAIL_PQ_PASS }}"
+          check CASHUP_WEBMAIL_GMAIL_PQ_USER "${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_USER }}"
+          check CASHUP_WEBMAIL_GMAIL_PQ_PASS "${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_PASS }}"
+          check CASHUP_EMAIL_PARA_PQ "${{ secrets.CASHUP_EMAIL_PARA_PQ }}"
           if [ -n "$faltando" ]; then
             echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
             echo "Configure em Settings > Secrets and variables > Actions."
@@ -51,11 +51,11 @@ jobs:
           CASHUP_URL=${{ secrets.CASHUP_PQ_URL }}
           CASHUP_USER=${{ secrets.CASHUP_PQ_USER }}
           CASHUP_PASS=${{ secrets.CASHUP_PQ_PASS }}
-          WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
-          WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
-          WEBMAIL_GMAIL_USER=${{ secrets.WEBMAIL_GMAIL_USER }}
-          WEBMAIL_GMAIL_PASS=${{ secrets.WEBMAIL_GMAIL_PASS }}
-          EMAIL_PARA_PQ=${{ secrets.EMAIL_PARA_PQ }}
+          WEBMAIL_USER=${{ secrets.CASHUP_WEBMAIL_PQ_USER }}
+          WEBMAIL_PASS=${{ secrets.CASHUP_WEBMAIL_PQ_PASS }}
+          WEBMAIL_GMAIL_USER=${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_USER }}
+          WEBMAIL_GMAIL_PASS=${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_PASS }}
+          EMAIL_PARA_PQ=${{ secrets.CASHUP_EMAIL_PARA_PQ }}
           EOF
 
       - name: Executar relatório de orçamentos
