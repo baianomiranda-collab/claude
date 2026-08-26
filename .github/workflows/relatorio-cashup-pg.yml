@@ -1,0 +1,61 @@
+name: Relatorio Orcamentos Cash-UP PG
+
+on:
+  schedule:
+    # Executa às 18h10 (horário de Brasília = UTC-3) -> 21h10 UTC
+    - cron: '10 21 * * *'
+  workflow_dispatch:  # permite execução manual pelo GitHub
+
+jobs:
+  run-relatorio-cashup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r GRUPOPQ/PROJETOS/relatorio_cashup_PG/requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Validar secrets configurados
+        run: |
+          faltando=""
+          check() { if [ -z "$2" ]; then faltando="$faltando $1"; fi; }
+          check CASHUP_URL "${{ secrets.CASHUP_URL }}"
+          check CASHUP_USER "${{ secrets.CASHUP_USER }}"
+          check CASHUP_PASS "${{ secrets.CASHUP_PASS }}"
+          check WEBMAIL_USER "${{ secrets.WEBMAIL_USER }}"
+          check WEBMAIL_PASS "${{ secrets.WEBMAIL_PASS }}"
+          check WEBMAIL_GMAIL_USER "${{ secrets.WEBMAIL_GMAIL_USER }}"
+          check WEBMAIL_GMAIL_PASS "${{ secrets.WEBMAIL_GMAIL_PASS }}"
+          check EMAIL_PARA "${{ secrets.EMAIL_PARA }}"
+          if [ -n "$faltando" ]; then
+            echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
+            echo "Configure em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "Todos os secrets necessarios estao configurados."
+
+      - name: Criar arquivo .env com credenciais
+        run: |
+          cat > GRUPOPQ/PROJETOS/relatorio_cashup_PG/.env << 'EOF'
+          CASHUP_URL=${{ secrets.CASHUP_URL }}
+          CASHUP_USER=${{ secrets.CASHUP_USER }}
+          CASHUP_PASS=${{ secrets.CASHUP_PASS }}
+          WEBMAIL_USER=${{ secrets.WEBMAIL_USER }}
+          WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
+          WEBMAIL_GMAIL_USER=${{ secrets.WEBMAIL_GMAIL_USER }}
+          WEBMAIL_GMAIL_PASS=${{ secrets.WEBMAIL_GMAIL_PASS }}
+          EMAIL_PARA=${{ secrets.EMAIL_PARA }}
+          EOF
+
+      - name: Executar relatório de orçamentos
+        run: python GRUPOPQ/PROJETOS/relatorio_cashup_PG/relatorio_cashup.py
