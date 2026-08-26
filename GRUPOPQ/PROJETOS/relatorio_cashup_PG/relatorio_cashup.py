@@ -16,7 +16,7 @@ Fluxo 100% automatico, sem pausa manual:
      usando as credenciais de bruno@lmtreina.com.br
   6. Aguarda o email chegar na caixa do sistemaorganon@gmail.com
   7. Encaminha esse email (sem recompor) para os destinatarios finais
-     em EMAIL_PARA (.env, lista separada por virgula)
+     em EMAIL_PARA_PG (.env, lista separada por virgula)
 
 DEPENDENCIAS:
   pip install playwright python-dotenv
@@ -56,7 +56,7 @@ WEBMAIL_USER = os.getenv("WEBMAIL_USER")
 WEBMAIL_PASS = os.getenv("WEBMAIL_PASS")
 GMAIL_USER = os.getenv("WEBMAIL_GMAIL_USER")
 GMAIL_PASS = (os.getenv("WEBMAIL_GMAIL_PASS") or "").replace(" ", "")
-EMAIL_PARA_LIST = [e.strip() for e in (os.getenv("EMAIL_PARA") or "").split(",") if e.strip()]
+EMAIL_PARA_LIST = [e.strip() for e in (os.getenv("EMAIL_PARA_PG") or "").split(",") if e.strip()]
 
 DEBUG_DIR = BASE_DIR / "debug"
 DEBUG_DIR.mkdir(exist_ok=True)
@@ -65,7 +65,7 @@ ENV_OBRIGATORIAS = [
     "CASHUP_URL", "CASHUP_USER", "CASHUP_PASS",
     "WEBMAIL_USER", "WEBMAIL_PASS",
     "WEBMAIL_GMAIL_USER", "WEBMAIL_GMAIL_PASS",
-    "EMAIL_PARA",
+    "EMAIL_PARA_PG",
 ]
 
 CASHUP_SENDER_MATCH = "cashup-pgquimica.com.br"
@@ -83,7 +83,7 @@ def verificar_ambiente() -> bool:
         print(f"  ERRO: variaveis faltando no .env: {', '.join(faltando)}")
         return False
     if not EMAIL_PARA_LIST:
-        print("  ERRO: EMAIL_PARA nao tem nenhum destinatario valido")
+        print("  ERRO: EMAIL_PARA_PG nao tem nenhum destinatario valido")
         return False
     print("  OK: .env com todas as variaveis necessarias")
     return True

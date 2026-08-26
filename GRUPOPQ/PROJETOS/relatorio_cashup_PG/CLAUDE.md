@@ -33,7 +33,7 @@ destinatários finais:
    `WEBMAIL_GMAIL_USER` (sistemaorganon@gmail.com), autenticando como `WEBMAIL_USER`.
 6. Faz polling via IMAP na caixa do Gmail (`sistemaorganon@gmail.com`) até esse encaminhamento
    chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 5 min).
-7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `EMAIL_PARA`
+7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `EMAIL_PARA_PG`
    (lista separada por vírgula), autenticando como `WEBMAIL_GMAIL_USER`.
 
 Fluxo 100% automático — sem pausa manual, sem interação humana. Só existe espera (polling), nunca
@@ -43,7 +43,7 @@ intervenção.
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de
 falha) e foi **reintroduzido a pedido do Bruno em 21/08/2026**, junto com a expansão do destinatário
 único para 3 destinatários finais (`alexandre.azevedo@pgquimica.com.br`, `graco@grupopq.com`,
-`bruno@solucoesb4.com.br`). Motivo da remoção anterior: mais um ponto de falha (esperar um segundo
+`bruno@solucoesb4.com.br`, hoje na variável `EMAIL_PARA_PG`). Motivo da remoção anterior: mais um ponto de falha (esperar um segundo
 email chegar) e, no caso do webmail B4 usado antes do Gmail, suspensão de envio pela hospedagem (erro
 SMTP 550, por volume de testes) — o Gmail não tem esse problema de suspensão por hospedagem
 compartilhada.
@@ -63,7 +63,7 @@ WEBMAIL_PASS=<senha do webmail LM Treina>
 WEBMAIL_GMAIL_USER=sistemaorganon@gmail.com
 WEBMAIL_GMAIL_PASS=<senha de app do Gmail — NÃO é a senha normal da conta>
 
-EMAIL_PARA=alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br
+EMAIL_PARA_PG=alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br
 ```
 
 `WEBMAIL_GMAIL_PASS` precisa ser uma **Senha de App** de 16 caracteres, gerada em
@@ -75,7 +75,7 @@ quanto para enviar o primeiro encaminhamento (SMTP). O servidor é descoberto au
 do domínio do email (`mail.<domínio>`, `<domínio>`, `smtp.<domínio>`) — não é preciso informar host
 manualmente.
 
-`EMAIL_PARA` aceita **múltiplos endereços separados por vírgula** — todos recebem o encaminhamento
+`EMAIL_PARA_PG` aceita **múltiplos endereços separados por vírgula** — todos recebem o encaminhamento
 final na mesma mensagem (campo `To` com todos, um só envio SMTP).
 
 ## Proteção contra emails antigos/duplicados
@@ -129,7 +129,7 @@ Também pode ser disparado manualmente pela aba **Actions** do repositório no G
 - `WEBMAIL_PASS` — senha do webmail LM Treina
 - `WEBMAIL_GMAIL_USER` — `sistemaorganon@gmail.com`
 - `WEBMAIL_GMAIL_PASS` — Senha de App do Gmail (não é a senha normal da conta)
-- `EMAIL_PARA` — `alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br`
+- `EMAIL_PARA_PG` — `alexandre.azevedo@pgquimica.com.br,graco@grupopq.com,bruno@solucoesb4.com.br`
 
 Os valores devem ser copiados do `.env` local (que nunca é commitado, ver `.gitignore`).
 

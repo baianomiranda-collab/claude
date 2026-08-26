@@ -33,7 +33,7 @@ destinatários finais:
    `WEBMAIL_GMAIL_USER` (sistemaorganon@gmail.com), autenticando como `WEBMAIL_USER`.
 6. Faz polling via IMAP na caixa do Gmail (`sistemaorganon@gmail.com`) até esse encaminhamento
    chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 5 min).
-7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `EMAIL_PARA`
+7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `EMAIL_PARA_PQ`
    (lista separada por vírgula), autenticando como `WEBMAIL_GMAIL_USER`.
 
 Fluxo 100% automático — sem pausa manual, sem interação humana. Só existe espera (polling), nunca
@@ -48,7 +48,7 @@ fluxo — só o portal de origem muda.
 
 > **Confirmado por Bruno em 26/08/2026:**
 > - `CASHUP_USER`/`CASHUP_PASS` iguais aos da PG (mesmo login) — mantido.
-> - `EMAIL_PARA` da PQ **não** inclui `alexandre.azevedo@pgquimica.com.br` (esse é destinatário só
+> - `EMAIL_PARA_PQ` da PQ **não** inclui `alexandre.azevedo@pgquimica.com.br` (esse é destinatário só
 >   da PG). Lista final da PQ: `graco@grupopq.com,bruno@solucoesb4.com.br`. Por isso a PQ usa um
 >   secret próprio no GitHub (`EMAIL_PARA_PQ`), já que as duas listas divergem — ver "Secrets"
 >   abaixo.
@@ -82,7 +82,7 @@ WEBMAIL_PASS=<senha do webmail LM Treina>
 WEBMAIL_GMAIL_USER=sistemaorganon@gmail.com
 WEBMAIL_GMAIL_PASS=<senha de app do Gmail — NÃO é a senha normal da conta>
 
-EMAIL_PARA=graco@grupopq.com,bruno@solucoesb4.com.br
+EMAIL_PARA_PQ=graco@grupopq.com,bruno@solucoesb4.com.br
 ```
 
 `WEBMAIL_GMAIL_PASS` precisa ser uma **Senha de App** de 16 caracteres, gerada em
@@ -94,7 +94,7 @@ quanto para enviar o primeiro encaminhamento (SMTP). O servidor é descoberto au
 do domínio do email (`mail.<domínio>`, `<domínio>`, `smtp.<domínio>`) — não é preciso informar host
 manualmente.
 
-`EMAIL_PARA` aceita **múltiplos endereços separados por vírgula** — todos recebem o encaminhamento
+`EMAIL_PARA_PQ` aceita **múltiplos endereços separados por vírgula** — todos recebem o encaminhamento
 final na mesma mensagem (campo `To` com todos, um só envio SMTP).
 
 ## Proteção contra emails antigos/duplicados
@@ -152,7 +152,7 @@ projetos usam portais e listas de destinatários diferentes):
 - `CASHUP_PQ_URL` — `https://www.cashup-pernambucoquimica.com.br/`
 - `CASHUP_PQ_USER` — email de login do Cash-UP
 - `CASHUP_PQ_PASS` — senha do Cash-UP
-- `EMAIL_PARA_PQ` — `graco@grupopq.com,bruno@solucoesb4.com.br` (diferente do `EMAIL_PARA` da PG,
+- `EMAIL_PARA_PQ` — `graco@grupopq.com,bruno@solucoesb4.com.br` (diferente do `EMAIL_PARA_PG` da PG,
   que inclui também `alexandre.azevedo@pgquimica.com.br`)
 
 Secrets reaproveitados da PG (mesmos valores, já devem existir no repositório):

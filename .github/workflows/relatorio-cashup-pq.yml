@@ -55,7 +55,7 @@ jobs:
           WEBMAIL_PASS=${{ secrets.WEBMAIL_PASS }}
           WEBMAIL_GMAIL_USER=${{ secrets.WEBMAIL_GMAIL_USER }}
           WEBMAIL_GMAIL_PASS=${{ secrets.WEBMAIL_GMAIL_PASS }}
-          EMAIL_PARA=${{ secrets.EMAIL_PARA_PQ }}
+          EMAIL_PARA_PQ=${{ secrets.EMAIL_PARA_PQ }}
           EOF
 
       - name: Executar relatório de orçamentos
