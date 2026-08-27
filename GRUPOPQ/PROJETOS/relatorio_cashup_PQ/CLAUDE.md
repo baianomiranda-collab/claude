@@ -85,6 +85,25 @@ fluxo — só o portal de origem muda.
 > - Agendamento no GitHub Actions definido para **18h40 (Brasília)**, 30 min depois da PG (18h10) —
 >   mantido como camada extra de segurança mesmo após a tag no assunto resolver a ambiguidade de
 >   verdade (ver "Proteção contra emails antigos/duplicados" abaixo).
+>
+> **27/08/2026 — causa real do timeout encontrada (não era charset):** o diagnóstico acima
+> (`SUBJECT_MATCH_PARTES_CASHUP`) não resolveu — o timeout persistiu mesmo depois. O log de
+> "vistos" (emails novos que não bateram no filtro) mostrou que **nenhum email do Cash-UP sequer
+> aparecia como novo na INBOX**, mesmo o Bruno confirmando que o email chegava normalmente em
+> `bruno@lmtreina.com.br`. Causa raiz: existe uma **regra de filtro na própria caixa** que desvia
+> automaticamente qualquer email de domínio `cashup-*.com.br` (tanto PG quanto PQ) direto para a
+> pasta `INBOX.GRUPOPQ` — nunca cai na INBOX. Como UID no IMAP é numerado **por pasta** (não é
+> global), o `baseline` tirado da INBOX nunca teria correspondência nenhuma com o que chega em
+> `INBOX.GRUPOPQ` de qualquer forma. Corrigido fazendo `uid_maximo_atual`, `descrever_uid`,
+> `aguardar_email` e `encaminhar_email` aceitarem um parâmetro `folder`, e usando
+> `CASHUP_FOLDER_LM = "INBOX.GRUPOPQ"` (constante no topo do script) em todas as chamadas do 1º
+> salto (LM Treina). O 2º salto (Gmail) continua na INBOX normal, sem mudança.
+>
+> **Isso pode afetar a PG também** — os emails de `cashup-pgquimica.com.br` foram confirmados na
+> mesma pasta `INBOX.GRUPOPQ` durante essa investigação. Ainda não foi decidido/aplicado o mesmo
+> fix no projeto `relatorio_cashup_PG` (que não deve ter sua regra alterada sem confirmação
+> explícita do Bruno) — se a PG também começar a falhar por timeout no 1º salto, essa é a causa
+> mais provável.
 
 ## Histórico do salto intermediário (Gmail) — herdado da PG
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de
