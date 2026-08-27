@@ -236,6 +236,23 @@ def uid_maximo_atual(connector) -> int:
     return int(uids[-1]) if uids else 0
 
 
+def descrever_uid(connector, uid: int) -> str:
+    """Descreve From/Subject/Date de um UID especifico -- usado so para diagnostico do baseline."""
+    if not uid:
+        return "(caixa vazia)"
+    imap = connector()
+    imap.select("INBOX")
+    typ, msg_data = imap.uid("fetch", str(uid).encode(), "(BODY.PEEK[HEADER])")
+    imap.logout()
+    if not msg_data or not msg_data[0]:
+        return f"UID={uid} (nao foi possivel ler o header)"
+    msg = email.message_from_bytes(msg_data[0][1])
+    remetente = decodificar_header(msg.get("From", ""))
+    assunto = decodificar_header(msg.get("Subject", ""))
+    data_hdr = msg.get("Date", "")
+    return f"UID={uid} From={remetente!r} Subject={assunto!r} Date={data_hdr!r}"
+
+
 def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: list[str], timeout: int):
     """Faz polling na INBOX ate achar um email com UID > baseline que combine com sender/subject."""
     prazo = time.time() + timeout
@@ -268,6 +285,7 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
         print(f"    [tentativa {tentativa}] ainda nao chegou, aguardando {POLL_INTERVAL}s...")
         time.sleep(POLL_INTERVAL)
 
+    print(f"    Horario UTC do timeout: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} (baseline UID={baseline})")
     if vistos:
         print(f"    Timeout. {len(vistos)} email(s) novo(s) na caixa que NAO bateram no filtro "
               f"(sender_match={sender_match!r}, subject_partes={subject_partes!r}):")
@@ -342,6 +360,9 @@ def main():
         print("\nRegistrando ponto de partida das caixas de entrada...")
         baseline_lm = uid_maximo_atual(conectar_imap_lmtreina)
         baseline_og = uid_maximo_atual(conectar_imap_gmail)
+        print(f"  Horario UTC agora: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  Baseline {WEBMAIL_USER}: {descrever_uid(conectar_imap_lmtreina, baseline_lm)}")
+        print(f"  Baseline {GMAIL_USER}: {descrever_uid(conectar_imap_gmail, baseline_og)}")
 
         print("\nDisparando relatorio no Cash-UP...")
         disparar_relatorio()
