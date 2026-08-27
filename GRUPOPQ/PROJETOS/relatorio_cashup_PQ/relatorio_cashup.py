@@ -70,6 +70,11 @@ ENV_OBRIGATORIAS = [
 
 CASHUP_SENDER_MATCH = "cashup-pernambucoquimica.com.br"
 SUBJECT_MATCH_PARTES = ["relatorio", "orcamento"]  # comparado sem acento, minusculo
+SUBJECT_MATCH_PARTES_CASHUP = ["cash-up"]  # so p/ o 1o salto (email original do Cash-UP, com o
+                                            # assunto exatamente como o servidor deles envia). Mais
+                                            # tolerante a eventual problema de charset em "Orçamento"
+                                            # (com acento) vindo direto de fora - "cash-up" nao tem
+                                            # acento e sempre aparece no assunto real observado.
 PROJETO_TAG = "PQ"  # marcado no assunto do 1o encaminhamento p/ diferenciar de outros projetos Cash-UP
                      # que usam a mesma caixa bruno@lmtreina.com.br e o mesmo relay sistemaorganon@gmail.com
 
@@ -225,6 +230,7 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
     """Faz polling na INBOX ate achar um email com UID > baseline que combine com sender/subject."""
     prazo = time.time() + timeout
     tentativa = 0
+    vistos = {}  # uid -> (remetente, assunto original) de tudo que passou pela caixa sem bater no filtro
     while time.time() < prazo:
         tentativa += 1
         imap = connector()
@@ -239,16 +245,26 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
             remetente = decodificar_header(msg.get("From", ""))
-            assunto = normalizar(decodificar_header(msg.get("Subject", "")))
+            assunto_original = decodificar_header(msg.get("Subject", ""))
+            assunto = normalizar(assunto_original)
 
             if sender_match.lower() in remetente.lower() and all(p in assunto for p in subject_partes):
                 imap.logout()
-                print(f"    Encontrado: From={remetente!r} Subject={decodificar_header(msg.get('Subject',''))!r}")
+                print(f"    Encontrado: From={remetente!r} Subject={assunto_original!r}")
                 return uid
+            vistos[uid] = (remetente, assunto_original)
 
         imap.logout()
         print(f"    [tentativa {tentativa}] ainda nao chegou, aguardando {POLL_INTERVAL}s...")
         time.sleep(POLL_INTERVAL)
+
+    if vistos:
+        print(f"    Timeout. {len(vistos)} email(s) novo(s) na caixa que NAO bateram no filtro "
+              f"(sender_match={sender_match!r}, subject_partes={subject_partes!r}):")
+        for uid, (remetente, assunto_original) in vistos.items():
+            print(f"      UID={uid} From={remetente!r} Subject={assunto_original!r}")
+    else:
+        print(f"    Timeout. Nenhum email novo (UID > {baseline}) apareceu na caixa durante a espera.")
 
     return None
 
@@ -321,7 +337,7 @@ def main():
         disparar_relatorio()
 
         print(f"\nAguardando email do Cash-UP em {WEBMAIL_USER} (ate {TIMEOUT_EMAIL_CASHUP // 60} min)...")
-        uid1 = aguardar_email(conectar_imap_lmtreina, baseline_lm, CASHUP_SENDER_MATCH, SUBJECT_MATCH_PARTES, TIMEOUT_EMAIL_CASHUP)
+        uid1 = aguardar_email(conectar_imap_lmtreina, baseline_lm, CASHUP_SENDER_MATCH, SUBJECT_MATCH_PARTES_CASHUP, TIMEOUT_EMAIL_CASHUP)
         if uid1 is None:
             raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} dentro do prazo.")
 

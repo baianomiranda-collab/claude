@@ -64,14 +64,24 @@ fluxo — só o portal de origem muda.
 >   até a grade de Orçamentos e o disparo do relatório já foram confirmados funcionando (print do
 >   Bruno mostrando "Mostrando 1 até 10 de 605 registros" e o aviso de envio do relatório).
 >
-> **Atenção — presunção ainda não confirmada:**
-> - `CASHUP_SENDER_MATCH` foi ajustado para `cashup-pernambucoquimica.com.br` (mesmo padrão de
->   domínio do remetente da PG, só trocando a empresa) — **isto ainda é uma suposição, não
->   confirmada**. O teste de 27/08/2026 disparou o relatório com sucesso mas travou por 5min33s (bem
->   próximo do timeout de 5 min de uma das duas esperas de email) — ainda não confirmamos qual dos
->   dois saltos travou nem por quê. Se for o 1º salto (email do próprio Cash-UP), o motivo mais
->   provável é justamente esse domínio estar errado. Ajustar assim que houver confirmação (olhando o
->   `From:` real do email que chegou, ou o log do step "Executar relatório de orçamentos" do run).
+> **27/08/2026 — diagnóstico fechado do timeout no 1º salto:**
+> - `CASHUP_SENDER_MATCH = "cashup-pernambucoquimica.com.br"` estava **certo** — confirmado com um
+>   email real (`cashup@cashup-pernambucoquimica.com.br`, assunto "Excel Relatório Orçamento -
+>   Cash-UP"). O email chegava normalmente em `bruno@lmtreina.com.br` (~1-2 min após o disparo), mas
+>   o script mesmo assim estourava os 15 min de espera sem reconhecê-lo — ou seja, não era demora de
+>   entrega, era falha no reconhecimento do email que já estava na caixa.
+> - Causa mais provável: **charset do assunto**. O servidor da PQ pode declarar uma codificação
+>   diferente da que a PG usa para acentuação — se "Orçamento" (com cedilha) vier mal decodificado,
+>   a comparação por `"orcamento" in assunto_normalizado` falha silenciosamente, mesmo removendo
+>   acentos, porque o caractere corrompido não é o "ç" esperado. Não foi possível confirmar 100% sem
+>   acesso aos bytes brutos do header, mas é a explicação mais consistente com os fatos.
+> - **Correção**: o 1º salto (email original do Cash-UP) agora usa `SUBJECT_MATCH_PARTES_CASHUP =
+>   ["cash-up"]` em vez de `["relatorio", "orcamento"]` — "cash-up" é ASCII puro (sem acento),
+>   sempre presente no assunto observado, e imune a esse tipo de problema de charset. O 2º salto
+>   (nosso próprio reenvio, que nós mesmos codificamos em UTF-8) continua usando o filtro original,
+>   sem risco. Além disso, `aguardar_email()` agora loga, em caso de timeout, o remetente/assunto
+>   bruto de qualquer email que tenha passado pela caixa sem bater no filtro — se travar de novo, o
+>   log do run já mostra o motivo exato, sem precisar repetir esse processo de diagnóstico.
 > - Agendamento no GitHub Actions definido para **18h40 (Brasília)**, 30 min depois da PG (18h10) —
 >   mantido como camada extra de segurança mesmo após a tag no assunto resolver a ambiguidade de
 >   verdade (ver "Proteção contra emails antigos/duplicados" abaixo).

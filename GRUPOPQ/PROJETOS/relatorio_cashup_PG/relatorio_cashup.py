@@ -225,6 +225,7 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
     """Faz polling na INBOX ate achar um email com UID > baseline que combine com sender/subject."""
     prazo = time.time() + timeout
     tentativa = 0
+    vistos = {}  # uid -> (remetente, assunto original) de tudo que passou pela caixa sem bater no filtro
     while time.time() < prazo:
         tentativa += 1
         imap = connector()
@@ -239,16 +240,26 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
             remetente = decodificar_header(msg.get("From", ""))
-            assunto = normalizar(decodificar_header(msg.get("Subject", "")))
+            assunto_original = decodificar_header(msg.get("Subject", ""))
+            assunto = normalizar(assunto_original)
 
             if sender_match.lower() in remetente.lower() and all(p in assunto for p in subject_partes):
                 imap.logout()
-                print(f"    Encontrado: From={remetente!r} Subject={decodificar_header(msg.get('Subject',''))!r}")
+                print(f"    Encontrado: From={remetente!r} Subject={assunto_original!r}")
                 return uid
+            vistos[uid] = (remetente, assunto_original)
 
         imap.logout()
         print(f"    [tentativa {tentativa}] ainda nao chegou, aguardando {POLL_INTERVAL}s...")
         time.sleep(POLL_INTERVAL)
+
+    if vistos:
+        print(f"    Timeout. {len(vistos)} email(s) novo(s) na caixa que NAO bateram no filtro "
+              f"(sender_match={sender_match!r}, subject_partes={subject_partes!r}):")
+        for uid, (remetente, assunto_original) in vistos.items():
+            print(f"      UID={uid} From={remetente!r} Subject={assunto_original!r}")
+    else:
+        print(f"    Timeout. Nenhum email novo (UID > {baseline}) apareceu na caixa durante a espera.")
 
     return None
 
