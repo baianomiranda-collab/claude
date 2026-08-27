@@ -203,12 +203,10 @@ relatorio_cashup_PQ/
   `CASHUP_WEBMAIL_GMAIL_PQ_PASS`, `CASHUP_EMAIL_PARA_PQ`) — ver "Configuração" acima.
 
 ## Agendamento
-Roda sozinho todo dia às **18h40 (horário de Brasília)** via GitHub Actions —
-`.github/workflows/relatorio-cashup-pq.yml`. Horário escolhido 30 minutos depois do projeto PG
-(18h10) de propósito, para não rodar em paralelo com ele — ver "Proteção contra emails
-antigos/duplicados" acima. Também pode ser disparado manualmente pela aba **Actions** do
-repositório no GitHub (botão "Run workflow"), sem precisar do computador local ligado. Timeout do
-job: 35 minutos.
+Roda sozinho todo dia às **18h30 (horário de Brasília)** via GitHub Actions —
+`.github/workflows/relatorio-cashup-pq.yml` (ajustado de 18h40 para 18h30 em 27/08/2026, a pedido
+do Bruno). Também pode ser disparado manualmente pela aba **Actions** do repositório no GitHub
+(botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 35 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PQ` (recriados por Bruno em

@@ -2,9 +2,8 @@ name: Relatorio Orcamentos Cash-UP PQ
 
 on:
   schedule:
-    # Executa às 18h40 (horário de Brasília = UTC-3) -> 21h40 UTC
-    # (30 min depois do workflow da PG, de proposito - ver CLAUDE.md do projeto)
-    - cron: '40 21 * * *'
+    # Executa às 18h30 (horário de Brasília = UTC-3) -> 21h30 UTC
+    - cron: '30 21 * * *'
   workflow_dispatch:  # permite execução manual pelo GitHub
 
 jobs:
