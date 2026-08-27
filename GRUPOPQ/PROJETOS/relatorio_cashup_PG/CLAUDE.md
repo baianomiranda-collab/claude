@@ -28,11 +28,11 @@ destinatários finais:
    nada mais a fazer no browser).
 4. Faz **polling via IMAP** na caixa de `CASHUP_WEBMAIL_PG_USER` (bruno@lmtreina.com.br, webmail LM Treina)
    até chegar um email novo de `cashup@cashup-pgquimica.com.br` com assunto
-   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 5 min).
+   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 15 min).
 5. **Encaminha esse email** (RFC822 completo, com o anexo original — não recompõe nada) para
    `CASHUP_WEBMAIL_GMAIL_PG_USER` (sistemaorganon@gmail.com), autenticando como `CASHUP_WEBMAIL_PG_USER`.
 6. Faz polling via IMAP na caixa do Gmail (`sistemaorganon@gmail.com`) até esse encaminhamento
-   chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 5 min).
+   chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 10 min).
 7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `CASHUP_EMAIL_PARA_PG`
    (lista separada por vírgula), autenticando como `CASHUP_WEBMAIL_GMAIL_PG_USER`.
 
@@ -126,12 +126,12 @@ relatorio_cashup_PG/
   `debug/erro_carregar_filtros_<data>.png`.
 - **Botão "Relatório Orçamentos" não encontrado/clicável**: screenshot em
   `debug/erro_botao_relatorio_<data>.png` — pode ser mudança de permissão de novo (já aconteceu antes).
-- **Email do Cash-UP nunca chega (timeout de 5 min)**: verificar se `CASHUP_PG_USER` é realmente o
+- **Email do Cash-UP nunca chega (timeout de 15 min)**: verificar se `CASHUP_PG_USER` é realmente o
   email cadastrado no Cash-UP para receber o relatório — o sistema manda para "seu email cadastrado",
   não necessariamente para o que está logado. O tempo de entrega do Cash-UP é bem variável (já vimos
-  de ~1 min a mais de 15 min) — com o timeout de 5 min, a execução pode falhar em dias que o Cash-UP
-  demorar mais para gerar o relatório.
-- **Encaminhamento não chega no Gmail (timeout de 5 min)**: pode ser Senha de App inválida/expirada,
+  de ~1 min a mais de 15 min) — o timeout foi subido de 5 para 15 min em 27/08/2026 justamente por
+  isso.
+- **Encaminhamento não chega no Gmail (timeout de 10 min)**: pode ser Senha de App inválida/expirada,
   ou o email caiu em spam — checar a pasta de spam do `sistemaorganon@gmail.com`.
 - **Erro de login SMTP/IMAP (LM Treina)**: verificar `CASHUP_WEBMAIL_PG_PASS` (webmail LM Treina).
 - **Erro SMTP 550 "Outgoing mail ... has been suspended"**: suspensão de anti-spam da hospedagem do
@@ -146,7 +146,7 @@ relatorio_cashup_PG/
 Roda sozinho todo dia às **18h10 (horário de Brasília)** via GitHub Actions —
 `.github/workflows/relatorio-cashup-pg.yml` (mesmo padrão do agente de email LM Treina).
 Também pode ser disparado manualmente pela aba **Actions** do repositório no GitHub
-(botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 25 minutos.
+(botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 35 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PG` (recriados por Bruno em

@@ -74,8 +74,8 @@ PROJETO_TAG = "PQ"  # marcado no assunto do 1o encaminhamento p/ diferenciar de 
                      # que usam a mesma caixa bruno@lmtreina.com.br e o mesmo relay sistemaorganon@gmail.com
 
 POLL_INTERVAL = 20  # segundos entre tentativas
-TIMEOUT_EMAIL_CASHUP = 5 * 60    # espera maxima pelo email do Cash-UP em WEBMAIL_USER
-TIMEOUT_EMAIL_ORGANON = 5 * 60   # espera maxima pelo encaminhamento chegar em GMAIL_USER
+TIMEOUT_EMAIL_CASHUP = 15 * 60   # espera maxima pelo email do Cash-UP (ja levou de ~1 a 15+ min)
+TIMEOUT_EMAIL_ORGANON = 10 * 60  # espera maxima pelo encaminhamento chegar em GMAIL_USER
 
 
 def verificar_ambiente() -> bool:
@@ -159,18 +159,25 @@ def disparar_relatorio() -> None:
             browser.close()
             raise RuntimeError("Grade de orcamentos nao carregou a tempo.")
 
+        # Seletor com aspas = match EXATO. Sem aspas o Playwright casa por substring, e quando o
+        # painel de filtros abre expandido a pagina tambem contem o rotulo "Carregar Filtros Salvos"
+        # — o .first pegava esse rotulo em vez do botao e o clique falhava (visto em 27/08/2026).
         print("  Carregando filtros salvos...")
         try:
-            page.locator("text=Carregar Filtros").first.click(timeout=10000)
+            page.locator('text="Carregar Filtros"').first.click(timeout=30000)
         except PWTimeout:
             page.screenshot(path=str(DEBUG_DIR / f"erro_carregar_filtros_{hoje}.png"))
             browser.close()
             raise RuntimeError("Botao 'Carregar Filtros' nao encontrado/clicavel.")
+        try:
+            page.wait_for_load_state("networkidle", timeout=15000)
+        except PWTimeout:
+            pass
         page.wait_for_timeout(2000)
 
         print("  Clicando em 'Relatorio Orcamentos'...")
         try:
-            page.locator("text=Relatório Orçamentos").first.click(timeout=10000)
+            page.locator('text="Relatório Orçamentos"').first.click(timeout=30000)
         except PWTimeout:
             page.screenshot(path=str(DEBUG_DIR / f"erro_botao_relatorio_{hoje}.png"))
             browser.close()

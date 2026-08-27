@@ -28,11 +28,11 @@ destinatários finais:
    nada mais a fazer no browser).
 4. Faz **polling via IMAP** na caixa de `CASHUP_WEBMAIL_PQ_USER` (bruno@lmtreina.com.br, webmail LM Treina)
    até chegar um email novo de `cashup@cashup-pernambucoquimica.com.br` com assunto
-   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 5 min).
+   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 15 min).
 5. **Encaminha esse email** (RFC822 completo, com o anexo original — não recompõe nada) para
    `CASHUP_WEBMAIL_GMAIL_PQ_USER` (sistemaorganon@gmail.com), autenticando como `CASHUP_WEBMAIL_PQ_USER`.
 6. Faz polling via IMAP na caixa do Gmail (`sistemaorganon@gmail.com`) até esse encaminhamento
-   chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 5 min).
+   chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 10 min).
 7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `CASHUP_EMAIL_PARA_PQ`
    (lista separada por vírgula), autenticando como `CASHUP_WEBMAIL_GMAIL_PQ_USER`.
 
@@ -158,11 +158,11 @@ relatorio_cashup_PQ/
   `debug/erro_carregar_filtros_<data>.png`.
 - **Botão "Relatório Orçamentos" não encontrado/clicável**: screenshot em
   `debug/erro_botao_relatorio_<data>.png` — pode ser mudança de permissão de novo (já aconteceu antes).
-- **Email do Cash-UP nunca chega (timeout de 5 min)**: verificar se `CASHUP_PQ_USER` é realmente o
+- **Email do Cash-UP nunca chega (timeout de 15 min)**: verificar se `CASHUP_PQ_USER` é realmente o
   email cadastrado no Cash-UP para receber o relatório, e se `CASHUP_SENDER_MATCH` (em
   `relatorio_cashup.py`) bate com o domínio real do remetente — ver aviso em "Origem deste projeto"
   acima.
-- **Encaminhamento não chega no Gmail (timeout de 5 min)**: pode ser Senha de App inválida/expirada,
+- **Encaminhamento não chega no Gmail (timeout de 10 min)**: pode ser Senha de App inválida/expirada,
   ou o email caiu em spam — checar a pasta de spam do `sistemaorganon@gmail.com`.
 - **Erro de login SMTP/IMAP (LM Treina)**: verificar `CASHUP_WEBMAIL_PQ_PASS` (webmail LM Treina).
 - **Erro SMTP 550 "Outgoing mail ... has been suspended"**: suspensão de anti-spam da hospedagem do
@@ -179,7 +179,7 @@ Roda sozinho todo dia às **18h40 (horário de Brasília)** via GitHub Actions �
 (18h10) de propósito, para não rodar em paralelo com ele — ver "Proteção contra emails
 antigos/duplicados" acima. Também pode ser disparado manualmente pela aba **Actions** do
 repositório no GitHub (botão "Run workflow"), sem precisar do computador local ligado. Timeout do
-job: 25 minutos.
+job: 35 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PQ` (recriados por Bruno em
