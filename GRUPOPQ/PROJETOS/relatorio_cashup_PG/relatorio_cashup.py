@@ -183,6 +183,16 @@ def disparar_relatorio() -> None:
             browser.close()
             raise RuntimeError("Botao 'Relatorio Orcamentos' nao encontrado/clicavel.")
 
+        # Confirma que o Cash-UP realmente reconheceu o pedido (nao so que o clique nao deu erro).
+        # Sem isso, um clique "mudo" (sem toast de confirmacao) passa despercebido e a espera pelo
+        # email falha 15 min depois sem pista nenhuma do motivo real.
+        try:
+            page.wait_for_selector("text=será enviado", timeout=10000)
+            print("  OK: Cash-UP confirmou o disparo (aviso de confirmacao apareceu na tela).")
+        except PWTimeout:
+            print("  AVISO: clique no botao nao deu erro, mas o aviso de confirmacao NAO apareceu "
+                  "na tela — o Cash-UP pode nao ter processado o pedido de fato.")
+
         page.wait_for_timeout(3000)
         page.screenshot(path=str(DEBUG_DIR / f"relatorio_disparado_{hoje}.png"))
         browser.close()
