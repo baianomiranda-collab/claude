@@ -89,13 +89,18 @@ Gmail). Só considera "o email certo" um que chegue com UID **maior** que esse p
 uma execução nunca pega por engano um relatório de um dia anterior (ou de outra pessoa) que já estava
 parado na caixa.
 
-Essa proteção **não** distingue PG de PQ no segundo salto (Gmail): o encaminhamento intermediário
-chega sempre de `bruno@lmtreina.com.br`, com o mesmo padrão de assunto, para os dois projetos — as
-caixas físicas (`bruno@lmtreina.com.br` e `sistemaorganon@gmail.com`) são as mesmas nos dois projetos,
-mesmo os secrets do GitHub sendo separados (`_PG` vs `_PQ`) e tendo os mesmos valores duplicados. Por
-isso os dois workflows do GitHub estão agendados com **30 minutos de intervalo** (ver "Agendamento"
-no `CLAUDE.md` da PQ) — se rodassem no mesmo minuto, poderia haver risco (ainda que baixo, dado o
-baseline de UID) de um projeto capturar o encaminhamento do outro por engano.
+As caixas físicas (`bruno@lmtreina.com.br` e `sistemaorganon@gmail.com`) são **as mesmas** nos dois
+projetos (PG e PQ) — o login do Cash-UP é idêntico nos dois portais e não dá pra cadastrar um email
+de recebimento diferente por portal (confirmado por Bruno em 27/08/2026), então não é possível
+separar por conta. A distinção entre PG e PQ é feita por **tag no assunto**: o 1º encaminhamento
+(LM Treina → Gmail) marca o assunto com `- PG` (constante `PROJETO_TAG` no início de
+`relatorio_cashup.py`) antes de reenviar — como `encaminhar_email()` não recompõe o resto da
+mensagem, essa marca persiste automaticamente no 2º encaminhamento (Gmail → destinatários finais)
+sem precisar tocar nele de novo. A segunda espera (`aguardar_email` na caixa do Gmail) já exige essa
+tag no assunto (`SUBJECT_MATCH_PARTES + ["- pg"]`), então mesmo que os dois workflows rodassem no
+mesmo minuto, um não pegaria o encaminhamento do outro por engano — o agendamento com **30 minutos de
+intervalo** (ver "Agendamento" no `CLAUDE.md` da PQ) continua existindo como camada extra de
+segurança, mas não é mais a única proteção.
 
 ## Estrutura de pastas
 ```

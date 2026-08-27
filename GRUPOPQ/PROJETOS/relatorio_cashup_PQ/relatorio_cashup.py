@@ -70,6 +70,8 @@ ENV_OBRIGATORIAS = [
 
 CASHUP_SENDER_MATCH = "cashup-pernambucoquimica.com.br"
 SUBJECT_MATCH_PARTES = ["relatorio", "orcamento"]  # comparado sem acento, minusculo
+PROJETO_TAG = "PQ"  # marcado no assunto do 1o encaminhamento p/ diferenciar de outros projetos Cash-UP
+                     # que usam a mesma caixa bruno@lmtreina.com.br e o mesmo relay sistemaorganon@gmail.com
 
 POLL_INTERVAL = 20  # segundos entre tentativas
 TIMEOUT_EMAIL_CASHUP = 5 * 60    # espera maxima pelo email do Cash-UP em WEBMAIL_USER
@@ -244,10 +246,12 @@ def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: 
     return None
 
 
-def encaminhar_email(connector_imap, uid: int, de: str, para, smtp_user: str, smtp_pass: str, smtp_hosts: list[tuple[str, int]]) -> None:
+def encaminhar_email(connector_imap, uid: int, de: str, para, smtp_user: str, smtp_pass: str, smtp_hosts: list[tuple[str, int]], subject_suffix: str = None) -> None:
     """Busca o email completo (com anexo) e reenvia como esta, so trocando From/To.
 
-    `para` aceita um unico endereco (str) ou uma lista de enderecos.
+    `para` aceita um unico endereco (str) ou uma lista de enderecos. Se `subject_suffix` for
+    passado, e anexado ao final do assunto (ex: "- PQ") — usado no 1o encaminhamento pra marcar
+    de qual projeto veio o relatorio, ja que caixa e relay sao compartilhados entre projetos.
     """
     destinatarios = [para] if isinstance(para, str) else list(para)
 
@@ -263,6 +267,11 @@ def encaminhar_email(connector_imap, uid: int, de: str, para, smtp_user: str, sm
             del msg[header]
     msg["From"] = de
     msg["To"] = ", ".join(destinatarios)
+
+    if subject_suffix:
+        assunto_atual = decodificar_header(msg.get("Subject", ""))
+        del msg["Subject"]
+        msg["Subject"] = email.header.Header(f"{assunto_atual} {subject_suffix}", "utf-8").encode()
 
     ultimo_erro = None
     for host, port in smtp_hosts:
@@ -309,11 +318,11 @@ def main():
         if uid1 is None:
             raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} dentro do prazo.")
 
-        print(f"\nEncaminhando para {GMAIL_USER}...")
-        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm)
+        print(f"\nEncaminhando para {GMAIL_USER} (marcado '- {PROJETO_TAG}' no assunto)...")
+        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm, subject_suffix=f"- {PROJETO_TAG}")
 
         print(f"\nAguardando email chegar em {GMAIL_USER} (ate {TIMEOUT_EMAIL_ORGANON // 60} min)...")
-        uid2 = aguardar_email(conectar_imap_gmail, baseline_og, WEBMAIL_USER, SUBJECT_MATCH_PARTES, TIMEOUT_EMAIL_ORGANON)
+        uid2 = aguardar_email(conectar_imap_gmail, baseline_og, WEBMAIL_USER, SUBJECT_MATCH_PARTES + [f"- {PROJETO_TAG.lower()}"], TIMEOUT_EMAIL_ORGANON)
         if uid2 is None:
             raise RuntimeError(f"Email encaminhado nao chegou em {GMAIL_USER} dentro do prazo.")
 

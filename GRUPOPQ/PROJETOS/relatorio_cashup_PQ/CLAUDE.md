@@ -53,15 +53,28 @@ fluxo — só o portal de origem muda.
 > - Todos os secrets do GitHub foram recriados com prefixo `CASHUP_` e sufixo `_PG`/`_PQ` — nenhum
 >   secret é mais compartilhado entre os dois projetos, nem mesmo webmail/Gmail (que antes eram
 >   secrets únicos reaproveitados). Os nomes das variáveis no `.env` local seguem o mesmo padrão.
+> - **27/08/2026**: o portal Cash-UP da PQ usa o **mesmo login** do Cash-UP da PG e não permite
+>   cadastrar um email de recebimento diferente por portal — ou seja, PG e PQ vão continuar usando
+>   fisicamente a mesma caixa `bruno@lmtreina.com.br` e o mesmo relay `sistemaorganon@gmail.com` para
+>   sempre, não é algo que dá pra "arrumar" trocando cadastro. Por isso os dois projetos agora marcam
+>   o assunto do encaminhamento com `- PG`/`- PQ` (`PROJETO_TAG` no script) — ver "Proteção contra
+>   emails antigos/duplicados" abaixo.
+> - **27/08/2026**: o erro "Grade de orcamentos nao carregou a tempo" (falha nas primeiras tentativas
+>   de execução automática) foi corrigido pelo Bruno diretamente na conta/portal da PQ — a navegação
+>   até a grade de Orçamentos e o disparo do relatório já foram confirmados funcionando (print do
+>   Bruno mostrando "Mostrando 1 até 10 de 605 registros" e o aviso de envio do relatório).
 >
 > **Atenção — presunção ainda não confirmada:**
 > - `CASHUP_SENDER_MATCH` foi ajustado para `cashup-pernambucoquimica.com.br` (mesmo padrão de
->   domínio do remetente da PG, só trocando a empresa) — **isto é uma suposição, não confirmada**.
->   Se o primeiro email real do Cash-UP da PQ chegar de um domínio diferente, o polling do passo 4
->   nunca vai encontrar o email e a execução vai falhar por timeout (5 min). Ajustar essa constante
->   assim que o primeiro relatório real chegar.
-> - Agendamento no GitHub Actions definido para **18h40 (Brasília)**, 30 min depois da PG (18h10),
->   propositalmente — ver seção "Agendamento" abaixo para o motivo (evitar cruzamento de emails).
+>   domínio do remetente da PG, só trocando a empresa) — **isto ainda é uma suposição, não
+>   confirmada**. O teste de 27/08/2026 disparou o relatório com sucesso mas travou por 5min33s (bem
+>   próximo do timeout de 5 min de uma das duas esperas de email) — ainda não confirmamos qual dos
+>   dois saltos travou nem por quê. Se for o 1º salto (email do próprio Cash-UP), o motivo mais
+>   provável é justamente esse domínio estar errado. Ajustar assim que houver confirmação (olhando o
+>   `From:` real do email que chegou, ou o log do step "Executar relatório de orçamentos" do run).
+> - Agendamento no GitHub Actions definido para **18h40 (Brasília)**, 30 min depois da PG (18h10) —
+>   mantido como camada extra de segurança mesmo após a tag no assunto resolver a ambiguidade de
+>   verdade (ver "Proteção contra emails antigos/duplicados" abaixo).
 
 ## Histórico do salto intermediário (Gmail) — herdado da PG
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de
@@ -107,13 +120,18 @@ Gmail). Só considera "o email certo" um que chegue com UID **maior** que esse p
 uma execução nunca pega por engano um relatório de um dia anterior (ou de outra pessoa) que já estava
 parado na caixa.
 
-Essa proteção **não** distingue PG de PQ no segundo salto (Gmail): o encaminhamento intermediário
-chega sempre de `bruno@lmtreina.com.br`, com o mesmo padrão de assunto, para os dois projetos — as
-caixas físicas (`bruno@lmtreina.com.br` e `sistemaorganon@gmail.com`) são as mesmas nos dois projetos,
-mesmo os secrets do GitHub sendo separados (`_PG` vs `_PQ`) e tendo os mesmos valores duplicados. Por
-isso os dois workflows do GitHub estão agendados com **30 minutos de intervalo** (ver "Agendamento")
-— se rodassem no mesmo minuto, poderia haver risco (ainda que baixo, dado o baseline de UID) de um
-projeto capturar o encaminhamento do outro por engano.
+As caixas físicas (`bruno@lmtreina.com.br` e `sistemaorganon@gmail.com`) são **as mesmas** nos dois
+projetos (PG e PQ) — o login do Cash-UP é idêntico nos dois portais e não dá pra cadastrar um email
+de recebimento diferente por portal (confirmado por Bruno em 27/08/2026), então não é possível
+separar por conta. A distinção entre PG e PQ é feita por **tag no assunto**: o 1º encaminhamento
+(LM Treina → Gmail) marca o assunto com `- PQ` (constante `PROJETO_TAG` no início de
+`relatorio_cashup.py`) antes de reenviar — como `encaminhar_email()` não recompõe o resto da
+mensagem, essa marca persiste automaticamente no 2º encaminhamento (Gmail → destinatários finais)
+sem precisar tocar nele de novo. A segunda espera (`aguardar_email` na caixa do Gmail) já exige essa
+tag no assunto (`SUBJECT_MATCH_PARTES + ["- pq"]`), então mesmo que os dois workflows rodassem no
+mesmo minuto, um não pegaria o encaminhamento do outro por engano — o agendamento com **30 minutos de
+intervalo** (ver "Agendamento" abaixo) continua existindo como camada extra de segurança, mas não é
+mais a única proteção.
 
 ## Estrutura de pastas
 ```
