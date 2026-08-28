@@ -2,8 +2,10 @@ name: Relatorio Orcamentos Cash-UP PQ
 
 on:
   schedule:
-    # Executa às 18h30 (horário de Brasília = UTC-3) -> 21h30 UTC
-    - cron: '30 21 * * *'
+    # Executa por volta das 18h23 (horário de Brasília = UTC-3) -> 21h23 UTC
+    # Minuto fora de horarios redondos (nao :00/:05/:10/...) de proposito -- o GitHub
+    # avisa que agendamentos em minutos "cheios" tem mais chance de atraso por concorrencia
+    - cron: '23 21 * * *'
   workflow_dispatch:  # permite execução manual pelo GitHub
 
 jobs:

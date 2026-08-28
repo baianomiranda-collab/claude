@@ -143,8 +143,9 @@ relatorio_cashup_PG/
   `CASHUP_WEBMAIL_GMAIL_PG_PASS`, `CASHUP_EMAIL_PARA_PG`) — ver "Configuração" acima.
 
 ## Agendamento
-Roda sozinho todo dia às **18h10 (horário de Brasília)** via GitHub Actions —
-`.github/workflows/relatorio-cashup-pg.yml` (mesmo padrão do agente de email LM Treina).
+Roda sozinho todo dia por volta das **18h07 (horário de Brasília)** via GitHub Actions —
+`.github/workflows/relatorio-cashup-pg.yml` (ajustado de 18h10 para 18h07 em 27/08/2026, a pedido
+do Bruno — minuto fora de horário redondo pra reduzir chance de atraso no `schedule:` do GitHub).
 Também pode ser disparado manualmente pela aba **Actions** do repositório no GitHub
 (botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 35 minutos.
 

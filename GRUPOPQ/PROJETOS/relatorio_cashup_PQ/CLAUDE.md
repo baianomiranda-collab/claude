@@ -203,10 +203,20 @@ relatorio_cashup_PQ/
   `CASHUP_WEBMAIL_GMAIL_PQ_PASS`, `CASHUP_EMAIL_PARA_PQ`) — ver "Configuração" acima.
 
 ## Agendamento
-Roda sozinho todo dia às **18h30 (horário de Brasília)** via GitHub Actions —
-`.github/workflows/relatorio-cashup-pq.yml` (ajustado de 18h40 para 18h30 em 27/08/2026, a pedido
-do Bruno). Também pode ser disparado manualmente pela aba **Actions** do repositório no GitHub
-(botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 35 minutos.
+Roda sozinho todo dia por volta das **18h23 (horário de Brasília)** via GitHub Actions —
+`.github/workflows/relatorio-cashup-pq.yml` (ajustado de 18h40 para 18h30, e depois para 18h23, em
+27/08/2026, a pedido do Bruno — minuto fora de horário redondo pra reduzir chance de atraso no
+`schedule:` do GitHub, ver nota abaixo). Também pode ser disparado manualmente pela aba **Actions**
+do repositório no GitHub (botão "Run workflow"), sem precisar do computador local ligado. Timeout
+do job: 35 minutos.
+
+> **27/08/2026 — atraso do `schedule:` do GitHub:** execuções agendadas por cron não têm horário
+> garantido — o GitHub enfileira por carga do sistema, e em repositórios sem atividade constante o
+> atraso observado passou de 3h (ex: agendado p/ 21h40 UTC, rodou de fato às 01h01 UTC do dia
+> seguinte). Não é bug do workflow. Mitigação aplicada: minuto do cron fora de horário redondo
+> (`:23` em vez de `:30`) — reduz a chance de concorrência, mas não garante o horário exato. Se
+> precisão real for necessária, a alternativa é um gatilho externo (ex: n8n) chamando a API do
+> GitHub (`workflow_dispatch`) no horário certo, em vez de depender do `schedule:` nativo.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PQ` (recriados por Bruno em
