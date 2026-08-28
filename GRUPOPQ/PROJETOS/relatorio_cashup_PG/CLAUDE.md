@@ -39,6 +39,23 @@ destinatários finais:
 Fluxo 100% automático — sem pausa manual, sem interação humana. Só existe espera (polling), nunca
 intervenção.
 
+## Correção de roteamento de pasta (28/08/2026)
+
+Existe uma **regra de filtro na própria caixa** `bruno@lmtreina.com.br` que desvia automaticamente
+qualquer email de domínio `cashup-*.com.br` (tanto PG quanto PQ) direto para a pasta
+`INBOX.GRUPOPQ` — nunca cai na INBOX. Isso foi descoberto no projeto irmão `relatorio_cashup_PQ`
+em 27/08/2026 (causa de vários timeouts no 1º salto) e confirmado que também afeta a PG (mesma
+regra de filtro, mesma caixa física). Correção aplicada aqui em 28/08/2026, mesmo padrão da PQ:
+`uid_maximo_atual`, `descrever_uid`, `aguardar_email` e `encaminhar_email` agora aceitam um
+parâmetro `folder`, e o 1º salto (LM Treina) usa `CASHUP_FOLDER_LM = "INBOX.GRUPOPQ"` em vez da
+INBOX padrão. O 2º salto (Gmail) continua na INBOX normal, sem mudança. De brinde, o filtro de
+assunto do 1º salto passou a usar `SUBJECT_MATCH_PARTES_CASHUP = ["cash-up"]` (ASCII puro, sem
+acento) em vez de `["relatorio", "orcamento"]`, e o script agora loga o baseline (UID/remetente/
+assunto/data) antes de disparar o relatório — mesmas melhorias de diagnóstico já presentes na PQ.
+Motivo de não ter sido corrigido antes: o `CLAUDE.md` desta pasta dizia explicitamente para não
+alterar essa regra sem confirmação do Bruno — a confirmação veio ao pedir acompanhamento e ajuste
+dos dois workflows em 28/08/2026, antes da execução agendada das 18h07.
+
 ## Histórico do salto intermediário (Gmail)
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de
 falha) e foi **reintroduzido a pedido do Bruno em 21/08/2026**, junto com a expansão do destinatário
