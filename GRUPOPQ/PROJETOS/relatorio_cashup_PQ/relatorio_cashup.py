@@ -78,9 +78,11 @@ SUBJECT_MATCH_PARTES_CASHUP = ["cash-up"]  # so p/ o 1o salto (email original do
 PROJETO_TAG = "PQ"  # marcado no assunto do 1o encaminhamento p/ diferenciar de outros projetos Cash-UP
                      # que usam a mesma caixa bruno@lmtreina.com.br e o mesmo relay sistemaorganon@gmail.com
 
-CASHUP_FOLDER_LM = "INBOX.GRUPOPQ"  # regra de filtro na caixa bruno@lmtreina.com.br desvia TODO email
-                                     # de dominio cashup-*.com.br (PG e PQ) pra essa pasta, nunca cai na
-                                     # INBOX -- descoberto em 27/08/2026, ver CLAUDE.md "Origem deste projeto"
+CASHUP_FOLDERS_LM = ["INBOX", "INBOX.GRUPOPQ"]  # existe uma regra de filtro na caixa
+    # bruno@lmtreina.com.br que hoje desvia TODO email de dominio cashup-*.com.br (PG e PQ) para
+    # INBOX.GRUPOPQ, nunca cai na INBOX -- descoberto em 27/08/2026, ver CLAUDE.md "Origem deste
+    # projeto". Mas em vez de assumir cegamente qual pasta vale (a regra pode mudar/ser removida),
+    # o polling busca nas duas a cada ciclo (INBOX primeiro) -- pedido do Bruno em 28/08/2026.
 
 POLL_INTERVAL = 20  # segundos entre tentativas
 TIMEOUT_EMAIL_CASHUP = 15 * 60   # espera maxima pelo email do Cash-UP (ja levou de ~1 a 15+ min)
@@ -257,48 +259,53 @@ def descrever_uid(connector, uid: int, folder: str = "INBOX") -> str:
     return f"UID={uid} From={remetente!r} Subject={assunto!r} Date={data_hdr!r}"
 
 
-def aguardar_email(connector, baseline: int, sender_match: str, subject_partes: list[str], timeout: int, folder: str = "INBOX"):
-    """Faz polling numa pasta IMAP ate achar um email com UID > baseline que combine com sender/subject."""
+def aguardar_email(connector, baselines: dict[str, int], sender_match: str, subject_partes: list[str], timeout: int):
+    """Faz polling em uma ou mais pastas IMAP (uma pasta por vez, a cada ciclo) ate achar um email
+    com UID > baseline[pasta] que combine com sender/subject. `baselines` mapeia pasta -> UID de
+    partida (ver `CASHUP_FOLDERS_LM`). Retorna (uid, pasta) do email encontrado, ou (None, None)."""
     prazo = time.time() + timeout
     tentativa = 0
-    vistos = {}  # uid -> (remetente, assunto original) de tudo que passou pela caixa sem bater no filtro
+    vistos = {}  # (pasta, uid) -> (remetente, assunto original) de tudo que nao bateu no filtro
     while time.time() < prazo:
         tentativa += 1
-        imap = connector()
-        imap.select(folder)
-        typ, data = imap.uid("search", None, "ALL")
-        uids = sorted(int(u) for u in data[0].split() if int(u) > baseline)
+        for folder, baseline in baselines.items():
+            imap = connector()
+            imap.select(folder)
+            typ, data = imap.uid("search", None, "ALL")
+            uids = sorted(int(u) for u in data[0].split() if int(u) > baseline)
 
-        for uid in uids:
-            typ, msg_data = imap.uid("fetch", str(uid).encode(), "(BODY.PEEK[HEADER])")
-            if not msg_data or not msg_data[0]:
-                continue
-            raw = msg_data[0][1]
-            msg = email.message_from_bytes(raw)
-            remetente = decodificar_header(msg.get("From", ""))
-            assunto_original = decodificar_header(msg.get("Subject", ""))
-            assunto = normalizar(assunto_original)
+            for uid in uids:
+                typ, msg_data = imap.uid("fetch", str(uid).encode(), "(BODY.PEEK[HEADER])")
+                if not msg_data or not msg_data[0]:
+                    continue
+                raw = msg_data[0][1]
+                msg = email.message_from_bytes(raw)
+                remetente = decodificar_header(msg.get("From", ""))
+                assunto_original = decodificar_header(msg.get("Subject", ""))
+                assunto = normalizar(assunto_original)
 
-            if sender_match.lower() in remetente.lower() and all(p in assunto for p in subject_partes):
-                imap.logout()
-                print(f"    Encontrado: From={remetente!r} Subject={assunto_original!r}")
-                return uid
-            vistos[uid] = (remetente, assunto_original)
+                if sender_match.lower() in remetente.lower() and all(p in assunto for p in subject_partes):
+                    imap.logout()
+                    print(f"    Encontrado em {folder!r}: From={remetente!r} Subject={assunto_original!r}")
+                    return uid, folder
+                vistos[(folder, uid)] = (remetente, assunto_original)
 
-        imap.logout()
-        print(f"    [tentativa {tentativa}] ainda nao chegou, aguardando {POLL_INTERVAL}s...")
+            imap.logout()
+
+        print(f"    [tentativa {tentativa}] ainda nao chegou em nenhuma pasta ({', '.join(baselines)}), "
+              f"aguardando {POLL_INTERVAL}s...")
         time.sleep(POLL_INTERVAL)
 
-    print(f"    Horario UTC do timeout: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} (baseline UID={baseline})")
+    print(f"    Horario UTC do timeout: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} (baselines={baselines})")
     if vistos:
-        print(f"    Timeout. {len(vistos)} email(s) novo(s) na caixa que NAO bateram no filtro "
+        print(f"    Timeout. {len(vistos)} email(s) novo(s) nas caixas que NAO bateram no filtro "
               f"(sender_match={sender_match!r}, subject_partes={subject_partes!r}):")
-        for uid, (remetente, assunto_original) in vistos.items():
-            print(f"      UID={uid} From={remetente!r} Subject={assunto_original!r}")
+        for (folder, uid), (remetente, assunto_original) in vistos.items():
+            print(f"      [{folder}] UID={uid} From={remetente!r} Subject={assunto_original!r}")
     else:
-        print(f"    Timeout. Nenhum email novo (UID > {baseline}) apareceu na caixa durante a espera.")
+        print(f"    Timeout. Nenhum email novo apareceu em nenhuma pasta ({', '.join(baselines)}) durante a espera.")
 
-    return None
+    return None, None
 
 
 def encaminhar_email(connector_imap, uid: int, de: str, para, smtp_user: str, smtp_pass: str, smtp_hosts: list[tuple[str, int]], subject_suffix: str = None, folder: str = "INBOX") -> None:
@@ -363,25 +370,27 @@ def main():
 
     try:
         print("\nRegistrando ponto de partida das caixas de entrada...")
-        baseline_lm = uid_maximo_atual(conectar_imap_lmtreina, folder=CASHUP_FOLDER_LM)
+        baselines_lm = {folder: uid_maximo_atual(conectar_imap_lmtreina, folder=folder) for folder in CASHUP_FOLDERS_LM}
         baseline_og = uid_maximo_atual(conectar_imap_gmail)
         print(f"  Horario UTC agora: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"  Baseline {WEBMAIL_USER} ({CASHUP_FOLDER_LM}): {descrever_uid(conectar_imap_lmtreina, baseline_lm, folder=CASHUP_FOLDER_LM)}")
+        for folder, baseline in baselines_lm.items():
+            print(f"  Baseline {WEBMAIL_USER} ({folder}): {descrever_uid(conectar_imap_lmtreina, baseline, folder=folder)}")
         print(f"  Baseline {GMAIL_USER}: {descrever_uid(conectar_imap_gmail, baseline_og)}")
 
         print("\nDisparando relatorio no Cash-UP...")
         disparar_relatorio()
 
-        print(f"\nAguardando email do Cash-UP em {WEBMAIL_USER} pasta {CASHUP_FOLDER_LM!r} (ate {TIMEOUT_EMAIL_CASHUP // 60} min)...")
-        uid1 = aguardar_email(conectar_imap_lmtreina, baseline_lm, CASHUP_SENDER_MATCH, SUBJECT_MATCH_PARTES_CASHUP, TIMEOUT_EMAIL_CASHUP, folder=CASHUP_FOLDER_LM)
+        print(f"\nAguardando email do Cash-UP em {WEBMAIL_USER} (pastas {', '.join(CASHUP_FOLDERS_LM)}, "
+              f"ate {TIMEOUT_EMAIL_CASHUP // 60} min)...")
+        uid1, folder1 = aguardar_email(conectar_imap_lmtreina, baselines_lm, CASHUP_SENDER_MATCH, SUBJECT_MATCH_PARTES_CASHUP, TIMEOUT_EMAIL_CASHUP)
         if uid1 is None:
-            raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} (pasta {CASHUP_FOLDER_LM}) dentro do prazo.")
+            raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} (pastas {', '.join(CASHUP_FOLDERS_LM)}) dentro do prazo.")
 
         print(f"\nEncaminhando para {GMAIL_USER} (marcado '- {PROJETO_TAG}' no assunto)...")
-        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm, subject_suffix=f"- {PROJETO_TAG}", folder=CASHUP_FOLDER_LM)
+        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm, subject_suffix=f"- {PROJETO_TAG}", folder=folder1)
 
         print(f"\nAguardando email chegar em {GMAIL_USER} (ate {TIMEOUT_EMAIL_ORGANON // 60} min)...")
-        uid2 = aguardar_email(conectar_imap_gmail, baseline_og, WEBMAIL_USER, SUBJECT_MATCH_PARTES + [f"- {PROJETO_TAG.lower()}"], TIMEOUT_EMAIL_ORGANON)
+        uid2, _folder2 = aguardar_email(conectar_imap_gmail, {"INBOX": baseline_og}, WEBMAIL_USER, SUBJECT_MATCH_PARTES + [f"- {PROJETO_TAG.lower()}"], TIMEOUT_EMAIL_ORGANON)
         if uid2 is None:
             raise RuntimeError(f"Email encaminhado nao chegou em {GMAIL_USER} dentro do prazo.")
 

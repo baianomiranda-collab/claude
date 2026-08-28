@@ -99,11 +99,17 @@ fluxo — só o portal de origem muda.
 > `CASHUP_FOLDER_LM = "INBOX.GRUPOPQ"` (constante no topo do script) em todas as chamadas do 1º
 > salto (LM Treina). O 2º salto (Gmail) continua na INBOX normal, sem mudança.
 >
-> **Isso pode afetar a PG também** — os emails de `cashup-pgquimica.com.br` foram confirmados na
-> mesma pasta `INBOX.GRUPOPQ` durante essa investigação. Ainda não foi decidido/aplicado o mesmo
-> fix no projeto `relatorio_cashup_PG` (que não deve ter sua regra alterada sem confirmação
-> explícita do Bruno) — se a PG também começar a falhar por timeout no 1º salto, essa é a causa
-> mais provável.
+> **Isso também afetava a PG** — os emails de `cashup-pgquimica.com.br` foram confirmados na
+> mesma pasta `INBOX.GRUPOPQ` durante essa investigação. Corrigido no projeto `relatorio_cashup_PG`
+> em 28/08/2026 (mesmo padrão), a pedido do Bruno, antes da execução agendada daquele dia.
+>
+> **28/08/2026 — polling passou a varrer as duas pastas:** em vez de assumir cegamente que o email
+> sempre vai cair em `INBOX.GRUPOPQ` (a regra de filtro do webmail pode mudar ou ser removida no
+> futuro), o `aguardar_email` do 1º salto agora varre `CASHUP_FOLDERS_LM = ["INBOX", "INBOX.GRUPOPQ"]`
+> a cada ciclo de polling (INBOX primeiro), em vez de uma única pasta fixa. Retorna `(uid, pasta)`,
+> e o `encaminhar_email` seguinte usa a pasta onde o email foi de fato encontrado. Mesmo ajuste
+> aplicado na PG. Sugestão do Bruno — evita uma futura falha se a regra de filtro for removida
+> (email voltaria a cair na `INBOX` normal) sem precisar de deploy nenhum quando isso acontecer.
 
 ## Histórico do salto intermediário (Gmail) — herdado da PG
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de

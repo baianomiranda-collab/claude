@@ -46,12 +46,21 @@ qualquer email de domínio `cashup-*.com.br` (tanto PG quanto PQ) direto para a 
 `INBOX.GRUPOPQ` — nunca cai na INBOX. Isso foi descoberto no projeto irmão `relatorio_cashup_PQ`
 em 27/08/2026 (causa de vários timeouts no 1º salto) e confirmado que também afeta a PG (mesma
 regra de filtro, mesma caixa física). Correção aplicada aqui em 28/08/2026, mesmo padrão da PQ:
-`uid_maximo_atual`, `descrever_uid`, `aguardar_email` e `encaminhar_email` agora aceitam um
-parâmetro `folder`, e o 1º salto (LM Treina) usa `CASHUP_FOLDER_LM = "INBOX.GRUPOPQ"` em vez da
-INBOX padrão. O 2º salto (Gmail) continua na INBOX normal, sem mudança. De brinde, o filtro de
-assunto do 1º salto passou a usar `SUBJECT_MATCH_PARTES_CASHUP = ["cash-up"]` (ASCII puro, sem
-acento) em vez de `["relatorio", "orcamento"]`, e o script agora loga o baseline (UID/remetente/
-assunto/data) antes de disparar o relatório — mesmas melhorias de diagnóstico já presentes na PQ.
+`uid_maximo_atual`, `descrever_uid` e `encaminhar_email` aceitam um parâmetro `folder`. De brinde,
+o filtro de assunto do 1º salto passou a usar `SUBJECT_MATCH_PARTES_CASHUP = ["cash-up"]` (ASCII
+puro, sem acento) em vez de `["relatorio", "orcamento"]`, e o script agora loga o baseline
+(UID/remetente/assunto/data) antes de disparar o relatório — mesmas melhorias de diagnóstico já
+presentes na PQ.
+
+**Ajuste seguinte, mesmo dia**: em vez de assumir cegamente que o email sempre vai cair em
+`INBOX.GRUPOPQ` (a regra de filtro do webmail pode mudar ou ser removida no futuro), o
+`aguardar_email` do 1º salto agora varre **as duas pastas a cada ciclo de polling**
+(`CASHUP_FOLDERS_LM = ["INBOX", "INBOX.GRUPOPQ"]`, INBOX primeiro) — pedido do Bruno. Retorna
+`(uid, pasta)`, e o `encaminhar_email` seguinte usa a pasta onde o email foi de fato encontrado.
+Isso evita tanto o timeout de hoje (email cai em `INBOX.GRUPOPQ`) quanto uma futura falha se a
+regra de filtro for removida (email voltaria a cair na `INBOX` normal) — sem precisar de deploy
+nenhum quando isso acontecer.
+
 Motivo de não ter sido corrigido antes: o `CLAUDE.md` desta pasta dizia explicitamente para não
 alterar essa regra sem confirmação do Bruno — a confirmação veio ao pedir acompanhamento e ajuste
 dos dois workflows em 28/08/2026, antes da execução agendada das 18h07.
