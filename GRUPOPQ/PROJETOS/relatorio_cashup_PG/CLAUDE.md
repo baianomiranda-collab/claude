@@ -65,6 +65,12 @@ Motivo de não ter sido corrigido antes: o `CLAUDE.md` desta pasta dizia explici
 alterar essa regra sem confirmação do Bruno — a confirmação veio ao pedir acompanhamento e ajuste
 dos dois workflows em 28/08/2026, antes da execução agendada das 18h07.
 
+**Ajuste seguinte, mesmo dia — email repetido**: se mais de um email bater no filtro na mesma
+rodada de polling (ex: sobra de uma execução anterior que não foi consumida), `aguardar_email`
+agora sempre escolhe o de **Date mais recente** entre os candidatos — antes escolhia o primeiro
+em ordem crescente de UID, que podia ser o mais antigo. Evita encaminhar por engano um relatório
+velho como se fosse o da execução atual. Pedido do Bruno.
+
 ## Histórico do salto intermediário (Gmail)
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de
 falha) e foi **reintroduzido a pedido do Bruno em 21/08/2026**, junto com a expansão do destinatário

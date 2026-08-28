@@ -110,6 +110,12 @@ fluxo — só o portal de origem muda.
 > e o `encaminhar_email` seguinte usa a pasta onde o email foi de fato encontrado. Mesmo ajuste
 > aplicado na PG. Sugestão do Bruno — evita uma futura falha se a regra de filtro for removida
 > (email voltaria a cair na `INBOX` normal) sem precisar de deploy nenhum quando isso acontecer.
+>
+> **28/08/2026 — email repetido:** se mais de um email bater no filtro na mesma rodada de polling
+> (ex: sobra de uma execução anterior que não foi consumida), `aguardar_email` agora sempre escolhe
+> o de **Date mais recente** entre os candidatos — antes escolhia o primeiro em ordem crescente de
+> UID, que podia ser o mais antigo. Evita encaminhar por engano um relatório velho como se fosse o
+> da execução atual. Mesmo ajuste aplicado na PG. Pedido do Bruno.
 
 ## Histórico do salto intermediário (Gmail) — herdado da PG
 O relay por `sistemaorganon@gmail.com` já foi removido uma vez (para simplificar e reduzir pontos de

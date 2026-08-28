@@ -25,6 +25,7 @@ DEPENDENCIAS:
 
 import email
 import email.header
+import email.utils
 import imaplib
 import os
 import smtplib
@@ -259,15 +260,31 @@ def descrever_uid(connector, uid: int, folder: str = "INBOX") -> str:
     return f"UID={uid} From={remetente!r} Subject={assunto!r} Date={data_hdr!r}"
 
 
+def _timestamp_email(data_hdr: str) -> float:
+    """Converte o header Date pra timestamp UTC comparavel. Retorna 0.0 (epoca) se nao der pra
+    parsear -- assim um email com Date invalido/ausente nunca "ganha" por engano de um valido."""
+    try:
+        parsed = email.utils.parsedate_tz(data_hdr or "")
+        if parsed:
+            return email.utils.mktime_tz(parsed)
+    except Exception:
+        pass
+    return 0.0
+
+
 def aguardar_email(connector, baselines: dict[str, int], sender_match: str, subject_partes: list[str], timeout: int):
-    """Faz polling em uma ou mais pastas IMAP (uma pasta por vez, a cada ciclo) ate achar um email
-    com UID > baseline[pasta] que combine com sender/subject. `baselines` mapeia pasta -> UID de
-    partida (ver `CASHUP_FOLDERS_LM`). Retorna (uid, pasta) do email encontrado, ou (None, None)."""
+    """Faz polling em uma ou mais pastas IMAP a cada ciclo ate achar email(s) com UID > baseline[pasta]
+    que combinem com sender/subject. `baselines` mapeia pasta -> UID de partida (ver
+    `CASHUP_FOLDERS_LM`). Se mais de um candidato bater no filtro na mesma rodada (ex: sobra de uma
+    execucao anterior que nao foi consumida), usa sempre o de Date mais recente -- nunca o mais
+    antigo -- pra nao encaminhar por engano um relatorio velho (email repetido). Retorna (uid, pasta)
+    do email escolhido, ou (None, None)."""
     prazo = time.time() + timeout
     tentativa = 0
     vistos = {}  # (pasta, uid) -> (remetente, assunto original) de tudo que nao bateu no filtro
     while time.time() < prazo:
         tentativa += 1
+        candidatos = []  # (timestamp, uid, pasta, remetente, assunto_original)
         for folder, baseline in baselines.items():
             imap = connector()
             imap.select(folder)
@@ -285,12 +302,20 @@ def aguardar_email(connector, baselines: dict[str, int], sender_match: str, subj
                 assunto = normalizar(assunto_original)
 
                 if sender_match.lower() in remetente.lower() and all(p in assunto for p in subject_partes):
-                    imap.logout()
-                    print(f"    Encontrado em {folder!r}: From={remetente!r} Subject={assunto_original!r}")
-                    return uid, folder
-                vistos[(folder, uid)] = (remetente, assunto_original)
+                    candidatos.append((_timestamp_email(msg.get("Date", "")), uid, folder, remetente, assunto_original))
+                else:
+                    vistos[(folder, uid)] = (remetente, assunto_original)
 
             imap.logout()
+
+        if candidatos:
+            candidatos.sort(key=lambda c: c[0])
+            if len(candidatos) > 1:
+                print(f"    AVISO: {len(candidatos)} emails novos bateram no filtro nesta rodada -- "
+                      f"usando o mais recente (Date mais alto) pra nao encaminhar um relatorio velho.")
+            _, uid, folder, remetente, assunto_original = candidatos[-1]
+            print(f"    Encontrado em {folder!r}: From={remetente!r} Subject={assunto_original!r}")
+            return uid, folder
 
         print(f"    [tentativa {tentativa}] ainda nao chegou em nenhuma pasta ({', '.join(baselines)}), "
               f"aguardando {POLL_INTERVAL}s...")
