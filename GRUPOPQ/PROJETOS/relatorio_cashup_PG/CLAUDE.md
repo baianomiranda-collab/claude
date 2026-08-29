@@ -175,11 +175,19 @@ relatorio_cashup_PG/
   `CASHUP_WEBMAIL_GMAIL_PG_PASS`, `CASHUP_EMAIL_PARA_PG`) — ver "Configuração" acima.
 
 ## Agendamento
-Roda sozinho todo dia por volta das **18h07 (horário de Brasília)** via GitHub Actions —
-`.github/workflows/relatorio-cashup-pg.yml` (ajustado de 18h10 para 18h07 em 27/08/2026, a pedido
-do Bruno — minuto fora de horário redondo pra reduzir chance de atraso no `schedule:` do GitHub).
-Também pode ser disparado manualmente pela aba **Actions** do repositório no GitHub
-(botão "Run workflow"), sem precisar do computador local ligado. Timeout do job: 35 minutos.
+Roda sozinho todo dia às **18h07 (horário de Brasília)**, mas **não** mais via `schedule:` nativo
+do GitHub Actions — esse trigger foi **removido em 29/08/2026** porque o agendamento nativo do
+GitHub atrasava (já visto ~6h de atraso em dia de baixa atividade do repo, execução que deveria
+sair às 18h07 saiu de fato 00h07 da madrugada seguinte). No lugar, o disparo vem de um workflow no
+**n8n** (`Disparo Cash-UP PG/PQ (GitHub Actions)`, instância `organon12.app.n8n.cloud`, node
+"Agendamento PG - 18h07" → node GitHub "Disparar Cash-UP PG"), que chama a API
+`workflow_dispatch` do GitHub no horário exato (timezone do workflow fixado em
+`America/Sao_Paulo`). `.github/workflows/relatorio-cashup-pg.yml` mantém só o trigger
+`workflow_dispatch:` (permite tanto o disparo do n8n quanto o botão "Run workflow" manual na aba
+Actions do GitHub). **Não reativar o `schedule:` no YAML sem antes desativar o agendamento no
+n8n** — os dois juntos disparariam o relatório em dobro no mesmo dia. Roda sem precisar do
+computador local ligado (nem o servidor Windows do Bruno — o n8n usado é cloud). Timeout do job:
+35 minutos.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PG` (recriados por Bruno em

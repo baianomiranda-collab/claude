@@ -1,12 +1,12 @@
 name: Relatorio Orcamentos Cash-UP PG
 
 on:
-  schedule:
-    # Executa por volta das 18h07 (horário de Brasília = UTC-3) -> 21h07 UTC
-    # Minuto fora de horarios redondos (nao :00/:05/:10/...) de proposito -- o GitHub
-    # avisa que agendamentos em minutos "cheios" tem mais chance de atraso por concorrencia
-    - cron: '7 21 * * *'
-  workflow_dispatch:  # permite execução manual pelo GitHub
+  # O `schedule:` nativo do GitHub Actions foi removido em 29/08/2026 -- o disparo diario
+  # (18h07 Brasilia) agora vem do workflow n8n "Disparo Cash-UP PG/PQ (GitHub Actions)"
+  # (organon12.app.n8n.cloud), que chama a API workflow_dispatch no horario certo. O
+  # `schedule:` nativo podia atrasar horas (ja visto ~6h) em dias de pouca atividade do repo.
+  # NAO reativar o `schedule:` aqui sem desativar o agendamento no n8n -- rodaria em dobro.
+  workflow_dispatch:  # permite execução manual pelo GitHub OU via n8n
 
 jobs:
   run-relatorio-cashup:

@@ -215,20 +215,33 @@ relatorio_cashup_PQ/
   `CASHUP_WEBMAIL_GMAIL_PQ_PASS`, `CASHUP_EMAIL_PARA_PQ`) — ver "Configuração" acima.
 
 ## Agendamento
-Roda sozinho todo dia por volta das **18h23 (horário de Brasília)** via GitHub Actions —
-`.github/workflows/relatorio-cashup-pq.yml` (ajustado de 18h40 para 18h30, e depois para 18h23, em
-27/08/2026, a pedido do Bruno — minuto fora de horário redondo pra reduzir chance de atraso no
-`schedule:` do GitHub, ver nota abaixo). Também pode ser disparado manualmente pela aba **Actions**
-do repositório no GitHub (botão "Run workflow"), sem precisar do computador local ligado. Timeout
-do job: 35 minutos.
+Roda sozinho todo dia às **18h23 (horário de Brasília)**, mas **não** mais via `schedule:` nativo
+do GitHub Actions — esse trigger foi **removido em 29/08/2026** (ver nota abaixo). No lugar, o
+disparo vem de um workflow no **n8n** (`Disparo Cash-UP PG/PQ (GitHub Actions)`, instância
+`organon12.app.n8n.cloud`, node "Agendamento PQ - 18h23" → node GitHub "Disparar Cash-UP PQ"),
+que chama a API `workflow_dispatch` do GitHub no horário exato (timezone do workflow fixado em
+`America/Sao_Paulo`). `.github/workflows/relatorio-cashup-pq.yml` mantém só o trigger
+`workflow_dispatch:` (permite tanto o disparo do n8n quanto o botão "Run workflow" manual na aba
+Actions do GitHub). **Não reativar o `schedule:` no YAML sem antes desativar o agendamento no
+n8n** — os dois juntos disparariam o relatório em dobro no mesmo dia. Roda sem precisar do
+computador local ligado (nem o servidor Windows do Bruno — o n8n usado é cloud). Timeout do job:
+35 minutos.
 
 > **27/08/2026 — atraso do `schedule:` do GitHub:** execuções agendadas por cron não têm horário
 > garantido — o GitHub enfileira por carga do sistema, e em repositórios sem atividade constante o
 > atraso observado passou de 3h (ex: agendado p/ 21h40 UTC, rodou de fato às 01h01 UTC do dia
-> seguinte). Não é bug do workflow. Mitigação aplicada: minuto do cron fora de horário redondo
-> (`:23` em vez de `:30`) — reduz a chance de concorrência, mas não garante o horário exato. Se
-> precisão real for necessária, a alternativa é um gatilho externo (ex: n8n) chamando a API do
-> GitHub (`workflow_dispatch`) no horário certo, em vez de depender do `schedule:` nativo.
+> seguinte). Não é bug do workflow. Mitigação tentada: minuto do cron fora de horário redondo
+> (`:23` em vez de `:30`) — reduziu a chance de concorrência, mas não garantiu o horário exato (em
+> 28/08/2026 o atraso chegou a ~6h mesmo assim, ex: agendado p/ 18h23 Brasília, rodou de fato às
+> 00h12 Brasília do dia seguinte).
+>
+> **29/08/2026 — solução definitiva:** confirmado pelo Bruno que a precisão de horário importa.
+> Trocado o `schedule:` nativo por um gatilho externo no n8n (ver "Agendamento" acima) — resolve
+> o atraso porque o relógio do n8n não depende da fila de runners do GitHub. Requer que a
+> instância n8n (`organon12.app.n8n.cloud`) e a credencial `GitHub account` (Personal Access
+> Token com permissão de Actions) continuem válidas; se o disparo parar de acontecer no horário,
+> checar primeiro se o workflow n8n continua **ativo** (`active: true`) antes de qualquer outra
+> investigação.
 
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PQ` (recriados por Bruno em
