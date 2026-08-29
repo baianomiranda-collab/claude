@@ -189,10 +189,36 @@ n8n** — os dois juntos disparariam o relatório em dobro no mesmo dia. Roda se
 computador local ligado (nem o servidor Windows do Bruno — o n8n usado é cloud). Timeout do job:
 35 minutos.
 
+## Avisos por WhatsApp (29/08/2026)
+
+Três momentos avisados via WhatsApp (MegaAPI, mesma instância/credencial "MegaAPI Organon" já
+usada no workflow `DesativarAgente_Organon` do n8n):
+
+1. **Disparado** — enviado pelo próprio n8n (node "Avisar WhatsApp - PG Iniciando"), logo após o
+   `workflow_dispatch` ter sucesso. Não é o mesmo que "começou a rodar de fato" — pode haver
+   alguns segundos de fila até o runner do GitHub pegar o job.
+2. **Sucesso** — step `Avisar WhatsApp - sucesso` (`if: success()`) no fim do job, direto no
+   runner do GitHub Actions.
+3. **Falha** — step `Avisar WhatsApp - falha` (`if: failure()`), inclui link pro log do run
+   (`github.run_id`) pra diagnóstico rápido sem precisar abrir a aba Actions manualmente.
+
+Por que sucesso/erro saem do GitHub Actions e não do n8n: só o runner sabe o resultado real na
+hora exata que termina — fazer o n8n *esperar* (polling) arriscaria estourar o timeout de
+execução do n8n Cloud, já que o processo todo pode levar até ~25min (15min + 10min de espera por
+email, ver "O que o script faz" acima). Decisão do Bruno.
+
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
-Todos os secrets deste projeto usam o prefixo `CASHUP_` e o sufixo `_PG` (recriados por Bruno em
-26/08/2026 para não colidir com os equivalentes da PQ — nenhum secret é mais compartilhado entre os
-dois projetos, nem mesmo webmail/Gmail). Os nomes são idênticos aos das variáveis do `.env` local:
+Além dos secrets `CASHUP_*` abaixo, os dois avisos de sucesso/falha (`.yml`) usam dois secrets
+**compartilhados** entre PG e PQ (mesmo destinatário, mesma instância WhatsApp — sem sufixo
+`_PG`/`_PQ`):
+
+- `MEGAAPI_TOKEN` — o mesmo Bearer token da credencial "MegaAPI Organon" no n8n.
+- `MEGAAPI_WHATSAPP_DESTINO` — número que recebe os avisos (formato `55DDNNNNNNNNN`).
+
+Todos os secrets `CASHUP_*` deste projeto usam o prefixo `CASHUP_` e o sufixo `_PG` (recriados por
+Bruno em 26/08/2026 para não colidir com os equivalentes da PQ — nenhum secret é mais compartilhado
+entre os dois projetos, nem mesmo webmail/Gmail). Os nomes são idênticos aos das variáveis do
+`.env` local:
 - `CASHUP_PG_URL` — `https://www.cashup-pgquimica.com.br/`
 - `CASHUP_PG_USER` — email de login do Cash-UP
 - `CASHUP_PG_PASS` — senha do Cash-UP

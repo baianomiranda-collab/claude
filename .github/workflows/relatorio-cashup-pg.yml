@@ -62,6 +62,29 @@ jobs:
       - name: Executar relatório de orçamentos
         run: python GRUPOPQ/PROJETOS/relatorio_cashup_PG/relatorio_cashup.py
 
+      - name: Avisar WhatsApp - sucesso
+        if: success()
+        env:
+          MEGAAPI_TOKEN: ${{ secrets.MEGAAPI_TOKEN }}
+          MEGAAPI_DESTINO: ${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}
+        run: |
+          curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
+            -H "Authorization: Bearer $MEGAAPI_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PG: relatorio enviado com sucesso.\"}}"
+
+      - name: Avisar WhatsApp - falha
+        if: failure()
+        env:
+          MEGAAPI_TOKEN: ${{ secrets.MEGAAPI_TOKEN }}
+          MEGAAPI_DESTINO: ${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
+            -H "Authorization: Bearer $MEGAAPI_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PG: FALHOU. Log: $RUN_URL\"}}"
+
       - name: Upload screenshots de debug (se houve falha)
         if: failure()
         uses: actions/upload-artifact@v4
