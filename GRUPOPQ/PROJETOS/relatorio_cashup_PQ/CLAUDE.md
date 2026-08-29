@@ -215,33 +215,46 @@ relatorio_cashup_PQ/
   `CASHUP_WEBMAIL_GMAIL_PQ_PASS`, `CASHUP_EMAIL_PARA_PQ`) — ver "Configuração" acima.
 
 ## Agendamento
-Roda sozinho todo dia às **18h23 (horário de Brasília)**, mas **não** mais via `schedule:` nativo
-do GitHub Actions — esse trigger foi **removido em 29/08/2026** (ver nota abaixo). No lugar, o
-disparo vem de um workflow no **n8n** (`Disparo Cash-UP PG/PQ (GitHub Actions)`, instância
-`organon12.app.n8n.cloud`, node "Agendamento PQ - 18h23" → node GitHub "Disparar Cash-UP PQ"),
-que chama a API `workflow_dispatch` do GitHub no horário exato (timezone do workflow fixado em
-`America/Sao_Paulo`). `.github/workflows/relatorio-cashup-pq.yml` mantém só o trigger
-`workflow_dispatch:` (permite tanto o disparo do n8n quanto o botão "Run workflow" manual na aba
-Actions do GitHub). **Não reativar o `schedule:` no YAML sem antes desativar o agendamento no
-n8n** — os dois juntos disparariam o relatório em dobro no mesmo dia. Roda sem precisar do
+**Não tem mais horário fixo próprio.** Até 29/08/2026 rodava sozinha às 18h23 Brasília via um
+node de agendamento independente no n8n; esse node foi removido e substituído por uma cadeia
+disparada pela PG — ver "Cadeia PG → PQ" abaixo para os detalhes completos. Roda sem precisar do
 computador local ligado (nem o servidor Windows do Bruno — o n8n usado é cloud). Timeout do job:
-35 minutos.
+35 minutos. `.github/workflows/relatorio-cashup-pq.yml` mantém só o trigger `workflow_dispatch:`
+(permite tanto o disparo pelo node GitHub do n8n quanto o botão "Run workflow" manual na aba
+Actions do GitHub).
 
-> **27/08/2026 — atraso do `schedule:` do GitHub:** execuções agendadas por cron não têm horário
-> garantido — o GitHub enfileira por carga do sistema, e em repositórios sem atividade constante o
-> atraso observado passou de 3h (ex: agendado p/ 21h40 UTC, rodou de fato às 01h01 UTC do dia
-> seguinte). Não é bug do workflow. Mitigação tentada: minuto do cron fora de horário redondo
-> (`:23` em vez de `:30`) — reduziu a chance de concorrência, mas não garantiu o horário exato (em
-> 28/08/2026 o atraso chegou a ~6h mesmo assim, ex: agendado p/ 18h23 Brasília, rodou de fato às
-> 00h12 Brasília do dia seguinte).
+> **27/08/2026 — atraso do `schedule:` nativo do GitHub (histórico):** execuções agendadas por
+> cron não têm horário garantido — o GitHub enfileira por carga do sistema, e em repositórios sem
+> atividade constante o atraso observado passou de 3h (ex: agendado p/ 21h40 UTC, rodou de fato às
+> 01h01 UTC do dia seguinte). Não é bug do workflow. Mitigação tentada: minuto do cron fora de
+> horário redondo (`:23` em vez de `:30`) — reduziu a chance de concorrência, mas não garantiu o
+> horário exato (em 28/08/2026 o atraso chegou a ~6h mesmo assim).
 >
-> **29/08/2026 — solução definitiva:** confirmado pelo Bruno que a precisão de horário importa.
-> Trocado o `schedule:` nativo por um gatilho externo no n8n (ver "Agendamento" acima) — resolve
-> o atraso porque o relógio do n8n não depende da fila de runners do GitHub. Requer que a
-> instância n8n (`organon12.app.n8n.cloud`) e a credencial `GitHub account` (Personal Access
-> Token com permissão de Actions) continuem válidas; se o disparo parar de acontecer no horário,
-> checar primeiro se o workflow n8n continua **ativo** (`active: true`) antes de qualquer outra
-> investigação.
+> **29/08/2026 — trocado por gatilho externo no n8n, depois virou cadeia:** primeiro trocamos o
+> `schedule:` nativo por um agendamento próprio no n8n (18h23 Brasília, timezone fixado em
+> `America/Sao_Paulo`) — resolveu o atraso porque o relógio do n8n não depende da fila de runners
+> do GitHub. No mesmo dia, ao tentar testar PG e PQ juntas, descobrimos que a ferramenta de teste
+> do n8n só dispara o primeiro trigger de um workflow com múltiplos agendamentos — não dava pra
+> testar as duas de forma confiável. O Bruno pediu pra trocar por uma cadeia orientada a evento
+> (PG termina → PQ dispara) em vez de dois agendamentos independentes — ver "Cadeia PG → PQ"
+> abaixo. Se o disparo parar de acontecer, checar primeiro se o workflow n8n
+> (`Disparo Cash-UP PG/PQ (GitHub Actions)`, `organon12.app.n8n.cloud`) continua **ativo**
+> (`active: true`) antes de qualquer outra investigação.
+
+## Cadeia PG → PQ (29/08/2026)
+
+A PQ dispara automaticamente logo que a **PG termina** — sucesso ou falha, tanto faz, o
+importante é nunca rodar em paralelo com a PG. Mecanismo (detalhado no `CLAUDE.md` da PG): o
+job da PG tem um step `if: always()` que faz `POST` pro webhook do node "Recebe resultado PG"
+no workflow n8n; esse webhook está conectado direto no node "Disparar Cash-UP PQ", então
+qualquer POST recebido dispara a PQ (não é um gate — não checa se a PG teve sucesso, só reage
+ao fato dela ter terminado). Do lado da PQ não muda nada no `.yml` — quem mudou foi só o
+mecanismo de disparo, upstream, no n8n.
+
+**Trade-off aceito:** a PQ passa a depender inteiramente desse webhook ser chamado pela PG. Se o
+job da PG for interrompido pela infraestrutura do GitHub antes de chegar nesse step (raro), a PQ
+não dispara naquele dia — não há mais agendamento de fallback independente pra ela. Decisão
+consciente do Bruno, trocando robustez de fallback por simplicidade e teste mais fácil.
 
 ## Avisos por WhatsApp (29/08/2026)
 
@@ -261,10 +274,18 @@ hora exata que termina — fazer o n8n *esperar* (polling) arriscaria estourar o
 execução do n8n Cloud, já que o processo todo pode levar até ~25min (15min + 10min de espera por
 email, ver "O que o script faz" acima). Decisão do Bruno. Mesmo ajuste aplicado na PG.
 
+Os `curl` dos avisos terminam com `|| echo "AVISO: ..."` — se a notificação em si falhar (ex:
+instabilidade de rede até a MegaAPI), isso não derruba o job (os steps `run:` do GitHub Actions
+rodam com `set -e` por padrão, então sem esse `||` uma falha de rede ao notificar marcaria o job
+inteiro como `failure` mesmo com o relatório enviado com sucesso). Mesmo ajuste na PG — lá é
+ainda mais importante, porque o `job.status` da PG é repassado no webhook que dispara a PQ (ver
+"Cadeia PG → PQ" acima).
+
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
 Além dos secrets `CASHUP_*` abaixo, os dois avisos de sucesso/falha (`.yml`) usam dois secrets
 **compartilhados** entre PG e PQ (mesmo destinatário, mesma instância WhatsApp — sem sufixo
-`_PG`/`_PQ`, já cadastrados junto com os da PG):
+`_PG`/`_PQ`, já cadastrados junto com os da PG). O secret `N8N_WEBHOOK_PG_CONCLUIDO` (que dispara
+essa cadeia) só é usado no `.yml` da PG — não precisa ser cadastrado aqui:
 
 - `MEGAAPI_TOKEN` — o mesmo Bearer token da credencial "MegaAPI Organon" no n8n.
 - `MEGAAPI_WHATSAPP_DESTINO` — número que recebe os avisos (formato `55DDNNNNNNNNN`).

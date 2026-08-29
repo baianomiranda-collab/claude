@@ -54,6 +54,11 @@ jobs:
             echo "roda normalmente, mas os avisos de sucesso/falha por WhatsApp nao serao enviados."
           fi
 
+          if [ -z "${{ secrets.N8N_WEBHOOK_PG_CONCLUIDO }}" ]; then
+            echo "AVISO: secret N8N_WEBHOOK_PG_CONCLUIDO ausente -- o relatorio roda normalmente,"
+            echo "mas a PQ NAO vai disparar em seguida (ela so dispara via esse webhook agora)."
+          fi
+
       - name: Criar arquivo .env com credenciais
         run: |
           cat > GRUPOPQ/PROJETOS/relatorio_cashup_PG/.env << 'EOF'
@@ -79,7 +84,8 @@ jobs:
           curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
             -H "Authorization: Bearer $MEGAAPI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PG: relatorio enviado com sucesso.\"}}"
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PG: relatorio enviado com sucesso.\"}}" \
+            || echo "AVISO: falha ao notificar WhatsApp (nao afeta o resultado do job)."
 
       - name: Avisar WhatsApp - falha
         if: failure()
@@ -91,7 +97,23 @@ jobs:
           curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
             -H "Authorization: Bearer $MEGAAPI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PG: FALHOU. Log: $RUN_URL\"}}"
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PG: FALHOU. Log: $RUN_URL\"}}" \
+            || echo "AVISO: falha ao notificar WhatsApp (nao afeta o resultado do job, que ja e failure)."
+
+      - name: Avisar n8n (dispara a PQ em sequencia)
+        if: always()
+        env:
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_PG_CONCLUIDO }}
+          CONCLUSAO: ${{ job.status }}
+        run: |
+          if [ -z "$N8N_WEBHOOK_URL" ]; then
+            echo "N8N_WEBHOOK_PG_CONCLUIDO nao configurado -- pulando aviso ao n8n."
+          else
+            curl -s -X POST "$N8N_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"projeto\": \"PG\", \"conclusion\": \"$CONCLUSAO\"}" \
+              || echo "AVISO: falha ao chamar o webhook do n8n -- a PQ pode nao disparar."
+          fi
 
       - name: Upload screenshots de debug (se houve falha)
         if: failure()

@@ -207,13 +207,43 @@ hora exata que termina — fazer o n8n *esperar* (polling) arriscaria estourar o
 execução do n8n Cloud, já que o processo todo pode levar até ~25min (15min + 10min de espera por
 email, ver "O que o script faz" acima). Decisão do Bruno.
 
+Todos os `curl` de aviso (WhatsApp e webhook do n8n, ver "Cadeia PG → PQ" abaixo) terminam com
+`|| echo "AVISO: ..."` — se a notificação em si falhar (ex: instabilidade de rede até a MegaAPI),
+isso **não** derruba o job. Sem isso, como os steps `run:` do GitHub Actions rodam com `set -e`
+por padrão, uma falha de rede ao notificar marcaria o job inteiro como `failure` mesmo com o
+relatório enviado com sucesso — e isso contaminaria o `job.status` repassado no webhook da PQ
+(ver abaixo).
+
+## Cadeia PG → PQ (29/08/2026)
+
+A PQ **não tem mais agendamento próprio** (o node "Agendamento PQ - 18h23" foi removido do
+workflow n8n). Em vez disso, ela dispara automaticamente logo que a PG termina — sucesso ou
+falha, tanto faz, o importante é nunca rodar em paralelo com a PG. Pedido do Bruno, depois de
+descobrir que a ferramenta de teste do n8n só dispara o primeiro trigger de um workflow com
+múltiplos agendamentos (não dava pra testar as duas de forma confiável com dois triggers
+independentes).
+
+Mecanismo: o step novo `Avisar n8n (dispara a PQ em sequencia)` (`if: always()`, roda mesmo se
+o relatório falhar) faz um `POST` pro webhook do node "Recebe resultado PG" no workflow n8n
+`Disparo Cash-UP PG/PQ (GitHub Actions)`, com `{"projeto": "PG", "conclusion": "<job.status>"}`.
+Esse webhook está conectado direto no node "Disparar Cash-UP PQ" — ou seja, chegou o POST, a PQ
+dispara, sem checar o conteúdo do `conclusion` (não é um gate, só um sinal de "a PG terminou").
+
+**Trade-off aceito:** a PQ passa a depender inteiramente desse webhook ser chamado. Se o job da
+PG for interrompido pela infraestrutura do GitHub antes de chegar nesse step (raro), a PQ não
+dispara naquele dia — não há mais agendamento de fallback independente pra ela.
+
 ### Secrets necessários no GitHub (Settings → Secrets and variables → Actions)
-Além dos secrets `CASHUP_*` abaixo, os dois avisos de sucesso/falha (`.yml`) usam dois secrets
-**compartilhados** entre PG e PQ (mesmo destinatário, mesma instância WhatsApp — sem sufixo
-`_PG`/`_PQ`):
+Além dos secrets `CASHUP_*` abaixo, os avisos de sucesso/falha e a cadeia PG→PQ usam secrets
+**compartilhados** entre PG e PQ (`N8N_WEBHOOK_PG_CONCLUIDO` só é chamado do lado da PG, mas é
+o mesmo padrão de nome sem sufixo `_PG`/`_PQ`):
 
 - `MEGAAPI_TOKEN` — o mesmo Bearer token da credencial "MegaAPI Organon" no n8n.
 - `MEGAAPI_WHATSAPP_DESTINO` — número que recebe os avisos (formato `55DDNNNNNNNNN`).
+- `N8N_WEBHOOK_PG_CONCLUIDO` — URL de produção do webhook "Recebe resultado PG"
+  (`https://organon12.app.n8n.cloud/webhook/cashup-pg-resultado-x9k2m7qz`). Guardado como
+  secret (não hardcoded no YAML) porque o repositório é público e o webhook não exige
+  autenticação — qualquer um com a URL poderia forçar um disparo da PQ.
 
 Todos os secrets `CASHUP_*` deste projeto usam o prefixo `CASHUP_` e o sufixo `_PG` (recriados por
 Bruno em 26/08/2026 para não colidir com os equivalentes da PQ — nenhum secret é mais compartilhado

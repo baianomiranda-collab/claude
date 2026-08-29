@@ -79,7 +79,8 @@ jobs:
           curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
             -H "Authorization: Bearer $MEGAAPI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PQ: relatorio enviado com sucesso.\"}}"
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PQ: relatorio enviado com sucesso.\"}}" \
+            || echo "AVISO: falha ao notificar WhatsApp (nao afeta o resultado do job)."
 
       - name: Avisar WhatsApp - falha
         if: failure()
@@ -91,7 +92,8 @@ jobs:
           curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
             -H "Authorization: Bearer $MEGAAPI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PQ: FALHOU. Log: $RUN_URL\"}}"
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PQ: FALHOU. Log: $RUN_URL\"}}" \
+            || echo "AVISO: falha ao notificar WhatsApp (nao afeta o resultado do job, que ja e failure)."
 
       - name: Upload screenshots de debug (se houve falha)
         if: failure()
