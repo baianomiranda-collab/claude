@@ -46,6 +46,14 @@ jobs:
           fi
           echo "Todos os secrets necessarios estao configurados."
 
+          faltando_whatsapp=""
+          if [ -z "${{ secrets.MEGAAPI_TOKEN }}" ]; then faltando_whatsapp="$faltando_whatsapp MEGAAPI_TOKEN"; fi
+          if [ -z "${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}" ]; then faltando_whatsapp="$faltando_whatsapp MEGAAPI_WHATSAPP_DESTINO"; fi
+          if [ -n "$faltando_whatsapp" ]; then
+            echo "AVISO: secrets do aviso por WhatsApp ausentes ($faltando_whatsapp) -- o relatorio"
+            echo "roda normalmente, mas os avisos de sucesso/falha por WhatsApp nao serao enviados."
+          fi
+
       - name: Criar arquivo .env com credenciais
         run: |
           cat > GRUPOPQ/PROJETOS/relatorio_cashup_PG/.env << 'EOF'
