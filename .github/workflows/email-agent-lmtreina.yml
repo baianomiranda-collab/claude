@@ -2,9 +2,9 @@ name: Email Agent LM Treina
 
 on:
   schedule:
-    # Executa às 7h, 10h, 13h, 16h, 19h e 22h (horário de Brasília = UTC-3)
-    # Em UTC: 10h, 13h, 16h, 19h, 22h e 01h
-    - cron: '0 1,10,13,16,19,22 * * *'
+    # Executa às 7h e 14h (horário de Brasília = UTC-3)
+    # Em UTC: 10h e 17h
+    - cron: '0 10,17 * * *'
   workflow_dispatch:  # permite execução manual pelo GitHub
 
 jobs:
