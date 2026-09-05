@@ -81,11 +81,15 @@ jobs:
           MEGAAPI_TOKEN: ${{ secrets.MEGAAPI_TOKEN }}
           MEGAAPI_DESTINO: ${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}
         run: |
-          curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
+          http_code=$(curl -s -o /tmp/whatsapp_resp.json -w "%{http_code}" -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
             -H "Authorization: Bearer $MEGAAPI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PG: relatorio enviado com sucesso.\"}}" \
-            || echo "AVISO: falha ao notificar WhatsApp (nao afeta o resultado do job)."
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"✅ Cash-UP PG: relatorio enviado com sucesso.\"}}")
+          if ! [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::warning::Aviso de WhatsApp (sucesso) pode NAO ter sido entregue -- MegaAPI respondeu HTTP '$http_code'. Corpo: $(cat /tmp/whatsapp_resp.json 2>/dev/null || echo '(sem resposta)')"
+          else
+            echo "Aviso de WhatsApp (sucesso) enviado -- MegaAPI respondeu HTTP $http_code."
+          fi
 
       - name: Avisar WhatsApp - falha
         if: failure()
@@ -94,11 +98,15 @@ jobs:
           MEGAAPI_DESTINO: ${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          curl -s -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
+          http_code=$(curl -s -o /tmp/whatsapp_resp.json -w "%{http_code}" -X POST "https://apinocode01.megaapi.com.br/rest/sendMessage/megacode-M8WFF7YG9U9BDPT6GQ3D7LBWGAV/text" \
             -H "Authorization: Bearer $MEGAAPI_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PG: FALHOU. Log: $RUN_URL\"}}" \
-            || echo "AVISO: falha ao notificar WhatsApp (nao afeta o resultado do job, que ja e failure)."
+            -d "{\"messageData\": {\"to\": \"$MEGAAPI_DESTINO\", \"text\": \"❌ Cash-UP PG: FALHOU. Log: $RUN_URL\"}}")
+          if ! [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::warning::Aviso de WhatsApp (falha) pode NAO ter sido entregue -- MegaAPI respondeu HTTP '$http_code'. Corpo: $(cat /tmp/whatsapp_resp.json 2>/dev/null || echo '(sem resposta)')"
+          else
+            echo "Aviso de WhatsApp (falha) enviado -- MegaAPI respondeu HTTP $http_code."
+          fi
 
       - name: Avisar n8n (dispara a PQ em sequencia)
         if: always()
@@ -109,10 +117,14 @@ jobs:
           if [ -z "$N8N_WEBHOOK_URL" ]; then
             echo "N8N_WEBHOOK_PG_CONCLUIDO nao configurado -- pulando aviso ao n8n."
           else
-            curl -s -X POST "$N8N_WEBHOOK_URL" \
+            http_code=$(curl -s -o /tmp/n8n_resp.json -w "%{http_code}" -X POST "$N8N_WEBHOOK_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"projeto\": \"PG\", \"conclusion\": \"$CONCLUSAO\"}" \
-              || echo "AVISO: falha ao chamar o webhook do n8n -- a PQ pode nao disparar."
+              -d "{\"projeto\": \"PG\", \"conclusion\": \"$CONCLUSAO\"}")
+            if ! [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+              echo "::warning::Webhook do n8n (dispara a PQ) pode ter falhado -- HTTP '$http_code'. A PQ pode NAO disparar hoje. Corpo: $(cat /tmp/n8n_resp.json 2>/dev/null || echo '(sem resposta)')"
+            else
+              echo "Webhook do n8n chamado com sucesso -- HTTP $http_code (PQ deve disparar em seguida)."
+            fi
           fi
 
       - name: Upload screenshots de debug (se houve falha)
