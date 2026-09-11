@@ -17,17 +17,30 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
+      - name: Verificar se a rotina esta pausada
+        id: pausa
+        run: |
+          if [ "${{ vars.CASHUP_PG_PAUSADO }}" = "true" ]; then
+            echo "pausado=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Rotina da PG PAUSADA manualmente (variavel de repositorio CASHUP_PG_PAUSADO=true). Execucao real pulada -- provavelmente usuario do Cash-UP bloqueado, aguardando desbloqueio. A PQ continua disparando normalmente em seguida (nao depende do resultado da PG)."
+          else
+            echo "pausado=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configurar Python
+        if: steps.pausa.outputs.pausado != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Instalar dependências
+        if: steps.pausa.outputs.pausado != 'true'
         run: |
           pip install -r GRUPOPQ/PROJETOS/relatorio_cashup_PG/requirements.txt
           python -m playwright install --with-deps chromium
 
       - name: Validar secrets configurados
+        if: steps.pausa.outputs.pausado != 'true'
         run: |
           faltando=""
           check() { if [ -z "$2" ]; then faltando="$faltando $1"; fi; }
@@ -60,6 +73,7 @@ jobs:
           fi
 
       - name: Criar arquivo .env com credenciais
+        if: steps.pausa.outputs.pausado != 'true'
         run: |
           cat > GRUPOPQ/PROJETOS/relatorio_cashup_PG/.env << 'EOF'
           CASHUP_PG_URL=${{ secrets.CASHUP_PG_URL }}
@@ -73,10 +87,11 @@ jobs:
           EOF
 
       - name: Executar relatório de orçamentos
+        if: steps.pausa.outputs.pausado != 'true'
         run: python GRUPOPQ/PROJETOS/relatorio_cashup_PG/relatorio_cashup.py
 
       - name: Avisar WhatsApp - sucesso
-        if: success()
+        if: steps.pausa.outputs.pausado != 'true' && success()
         env:
           MEGAAPI_TOKEN: ${{ secrets.MEGAAPI_TOKEN }}
           MEGAAPI_DESTINO: ${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}
@@ -92,7 +107,7 @@ jobs:
           fi
 
       - name: Avisar WhatsApp - falha
-        if: failure()
+        if: steps.pausa.outputs.pausado != 'true' && failure()
         env:
           MEGAAPI_TOKEN: ${{ secrets.MEGAAPI_TOKEN }}
           MEGAAPI_DESTINO: ${{ secrets.MEGAAPI_WHATSAPP_DESTINO }}
