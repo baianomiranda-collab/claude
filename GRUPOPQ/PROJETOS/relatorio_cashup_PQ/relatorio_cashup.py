@@ -4,19 +4,21 @@
   Portal: https://www.cashup-pernambucoquimica.com.br/
   Uso: python relatorio_cashup.py
 =============================================================
-Fluxo 100% automatico, sem pausa manual:
-  1. Login no Cash-UP com credenciais do .env
-  2. Abre "Orcamentos" (menu superior -> submenu "Orcamentos")
+FLUXO SIMPLIFICADO (15/09/2026, pedido do Bruno):
+  1. Login no Cash-UP com CASHUP_PQ_USER/CASHUP_PQ_PASS (agora
+     graco@grupopq.com -- o proprio destinatario final do relatorio).
+  2. Abre "Orcamentos" (menu superior -> submenu "Orcamentos").
   3. Clica em "Carregar Filtros" e depois em "Relatorio Orcamentos"
-     — o Cash-UP gera o relatorio e envia por email para o
-     endereco cadastrado (WEBMAIL_USER)
-  4. Aguarda esse email chegar na caixa de bruno@lmtreina.com.br
-     (remetente do dominio cashup-pernambucoquimica.com.br)
-  5. Encaminha esse email (sem recompor) para sistemaorganon@gmail.com,
-     usando as credenciais de bruno@lmtreina.com.br
-  6. Aguarda o email chegar na caixa do sistemaorganon@gmail.com
-  7. Encaminha esse email (sem recompor) para os destinatarios finais
-     em CASHUP_EMAIL_PARA_PQ (.env, lista separada por virgula)
+     -- o Cash-UP gera o relatorio e envia por email direto pro
+     endereco cadastrado nesse login (graco@grupopq.com).
+  4. Encerra. No mais encaminhamento (LM Treina -> Gmail -> destino
+     final) -- como o login agora E o destinatario final, o proprio
+     Cash-UP ja entrega no lugar certo.
+
+As funcoes de IMAP/SMTP abaixo (aguardar/encaminhar email) ficam
+SUSPENSAS (definidas mas nao chamadas em main()) -- mantidas caso o
+fluxo antigo precise ser reativado no futuro. Ver CASHUP_FOLDERS_LM,
+CASHUP_SENDER_MATCH etc, tudo dead code proposital por enquanto.
 
 DEPENDENCIAS:
   pip install playwright python-dotenv
@@ -64,10 +66,9 @@ DEBUG_DIR.mkdir(exist_ok=True)
 
 ENV_OBRIGATORIAS = [
     "CASHUP_PQ_URL", "CASHUP_PQ_USER", "CASHUP_PQ_PASS",
-    "CASHUP_WEBMAIL_PQ_USER", "CASHUP_WEBMAIL_PQ_PASS",
-    "CASHUP_WEBMAIL_GMAIL_PQ_USER", "CASHUP_WEBMAIL_GMAIL_PQ_PASS",
-    "CASHUP_EMAIL_PARA_PQ",
 ]
+# CASHUP_WEBMAIL_PQ_*/CASHUP_WEBMAIL_GMAIL_PQ_*/CASHUP_EMAIL_PARA_PQ nao sao mais obrigatorias --
+# so usadas pelas funcoes de encaminhamento SUSPENSAS (ver topo do arquivo).
 
 CASHUP_SENDER_MATCH = "cashup-pernambucoquimica.com.br"
 SUBJECT_MATCH_PARTES = ["relatorio", "orcamento"]  # comparado sem acento, minusculo
@@ -95,9 +96,6 @@ def verificar_ambiente() -> bool:
     faltando = [k for k in ENV_OBRIGATORIAS if not os.getenv(k)]
     if faltando:
         print(f"  ERRO: variaveis faltando no .env: {', '.join(faltando)}")
-        return False
-    if not EMAIL_PARA_LIST:
-        print("  ERRO: CASHUP_EMAIL_PARA_PQ nao tem nenhum destinatario valido")
         return False
     print("  OK: .env com todas as variaveis necessarias")
     return True
@@ -389,39 +387,10 @@ def main():
     if not verificar_ambiente():
         sys.exit(1)
 
-    domain_lm = WEBMAIL_USER.split("@")[1]
-    smtp_hosts_lm = [("mail." + domain_lm, 587), (domain_lm, 587), ("smtp." + domain_lm, 587), ("mail." + domain_lm, 465)]
-    smtp_hosts_gmail = [("smtp.gmail.com", 587)]
-
     try:
-        print("\nRegistrando ponto de partida das caixas de entrada...")
-        baselines_lm = {folder: uid_maximo_atual(conectar_imap_lmtreina, folder=folder) for folder in CASHUP_FOLDERS_LM}
-        baseline_og = uid_maximo_atual(conectar_imap_gmail)
-        print(f"  Horario UTC agora: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
-        for folder, baseline in baselines_lm.items():
-            print(f"  Baseline {WEBMAIL_USER} ({folder}): {descrever_uid(conectar_imap_lmtreina, baseline, folder=folder)}")
-        print(f"  Baseline {GMAIL_USER}: {descrever_uid(conectar_imap_gmail, baseline_og)}")
-
         print("\nDisparando relatorio no Cash-UP...")
         disparar_relatorio()
-
-        print(f"\nAguardando email do Cash-UP em {WEBMAIL_USER} (pastas {', '.join(CASHUP_FOLDERS_LM)}, "
-              f"ate {TIMEOUT_EMAIL_CASHUP // 60} min)...")
-        uid1, folder1 = aguardar_email(conectar_imap_lmtreina, baselines_lm, CASHUP_SENDER_MATCH, SUBJECT_MATCH_PARTES_CASHUP, TIMEOUT_EMAIL_CASHUP)
-        if uid1 is None:
-            raise RuntimeError(f"Email do Cash-UP nao chegou em {WEBMAIL_USER} (pastas {', '.join(CASHUP_FOLDERS_LM)}) dentro do prazo.")
-
-        print(f"\nEncaminhando para {GMAIL_USER} (marcado '- {PROJETO_TAG}' no assunto)...")
-        encaminhar_email(conectar_imap_lmtreina, uid1, WEBMAIL_USER, GMAIL_USER, WEBMAIL_USER, WEBMAIL_PASS, smtp_hosts_lm, subject_suffix=f"- {PROJETO_TAG}", folder=folder1)
-
-        print(f"\nAguardando email chegar em {GMAIL_USER} (ate {TIMEOUT_EMAIL_ORGANON // 60} min)...")
-        uid2, _folder2 = aguardar_email(conectar_imap_gmail, {"INBOX": baseline_og}, WEBMAIL_USER, SUBJECT_MATCH_PARTES + [f"- {PROJETO_TAG.lower()}"], TIMEOUT_EMAIL_ORGANON)
-        if uid2 is None:
-            raise RuntimeError(f"Email encaminhado nao chegou em {GMAIL_USER} dentro do prazo.")
-
-        print(f"\nEncaminhando para {', '.join(EMAIL_PARA_LIST)}...")
-        encaminhar_email(conectar_imap_gmail, uid2, GMAIL_USER, EMAIL_PARA_LIST, GMAIL_USER, GMAIL_PASS, smtp_hosts_gmail)
-
+        print(f"\nCash-UP vai entregar o relatorio direto em {LOGIN_USER} (email cadastrado nesse login).")
     except Exception as e:
         print(f"\nERRO: {e}")
         sys.exit(1)

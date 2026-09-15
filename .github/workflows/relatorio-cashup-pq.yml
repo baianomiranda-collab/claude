@@ -34,11 +34,9 @@ jobs:
           check CASHUP_PQ_URL "${{ secrets.CASHUP_PQ_URL }}"
           check CASHUP_PQ_USER "${{ secrets.CASHUP_PQ_USER }}"
           check CASHUP_PQ_PASS "${{ secrets.CASHUP_PQ_PASS }}"
-          check CASHUP_WEBMAIL_PQ_USER "${{ secrets.CASHUP_WEBMAIL_PQ_USER }}"
-          check CASHUP_WEBMAIL_PQ_PASS "${{ secrets.CASHUP_WEBMAIL_PQ_PASS }}"
-          check CASHUP_WEBMAIL_GMAIL_PQ_USER "${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_USER }}"
-          check CASHUP_WEBMAIL_GMAIL_PQ_PASS "${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_PASS }}"
-          check CASHUP_EMAIL_PARA_PQ "${{ secrets.CASHUP_EMAIL_PARA_PQ }}"
+          # CASHUP_WEBMAIL_PQ_*/CASHUP_WEBMAIL_GMAIL_PQ_*/CASHUP_EMAIL_PARA_PQ nao sao mais
+          # obrigatorias -- fluxo simplificado (15/09/2026): o login agora e o proprio
+          # destinatario final (graco@grupopq.com), sem encaminhamento.
           if [ -n "$faltando" ]; then
             echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
             echo "Configure em Settings > Secrets and variables > Actions."
@@ -60,11 +58,6 @@ jobs:
           CASHUP_PQ_URL=${{ secrets.CASHUP_PQ_URL }}
           CASHUP_PQ_USER=${{ secrets.CASHUP_PQ_USER }}
           CASHUP_PQ_PASS=${{ secrets.CASHUP_PQ_PASS }}
-          CASHUP_WEBMAIL_PQ_USER=${{ secrets.CASHUP_WEBMAIL_PQ_USER }}
-          CASHUP_WEBMAIL_PQ_PASS=${{ secrets.CASHUP_WEBMAIL_PQ_PASS }}
-          CASHUP_WEBMAIL_GMAIL_PQ_USER=${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_USER }}
-          CASHUP_WEBMAIL_GMAIL_PQ_PASS=${{ secrets.CASHUP_WEBMAIL_GMAIL_PQ_PASS }}
-          CASHUP_EMAIL_PARA_PQ=${{ secrets.CASHUP_EMAIL_PARA_PQ }}
           EOF
 
       - name: Executar relatório de orçamentos

@@ -47,11 +47,9 @@ jobs:
           check CASHUP_PG_URL "${{ secrets.CASHUP_PG_URL }}"
           check CASHUP_PG_USER "${{ secrets.CASHUP_PG_USER }}"
           check CASHUP_PG_PASS "${{ secrets.CASHUP_PG_PASS }}"
-          check CASHUP_WEBMAIL_PG_USER "${{ secrets.CASHUP_WEBMAIL_PG_USER }}"
-          check CASHUP_WEBMAIL_PG_PASS "${{ secrets.CASHUP_WEBMAIL_PG_PASS }}"
-          check CASHUP_WEBMAIL_GMAIL_PG_USER "${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_USER }}"
-          check CASHUP_WEBMAIL_GMAIL_PG_PASS "${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_PASS }}"
-          check CASHUP_EMAIL_PARA_PG "${{ secrets.CASHUP_EMAIL_PARA_PG }}"
+          # CASHUP_WEBMAIL_PG_*/CASHUP_WEBMAIL_GMAIL_PG_*/CASHUP_EMAIL_PARA_PG nao sao mais
+          # obrigatorias -- fluxo simplificado (15/09/2026): o login agora e o proprio
+          # destinatario final (graco@grupopq.com), sem encaminhamento.
           if [ -n "$faltando" ]; then
             echo "ERRO: os seguintes secrets do repositorio estao vazios ou nao existem:$faltando"
             echo "Configure em Settings > Secrets and variables > Actions."
@@ -79,11 +77,6 @@ jobs:
           CASHUP_PG_URL=${{ secrets.CASHUP_PG_URL }}
           CASHUP_PG_USER=${{ secrets.CASHUP_PG_USER }}
           CASHUP_PG_PASS=${{ secrets.CASHUP_PG_PASS }}
-          CASHUP_WEBMAIL_PG_USER=${{ secrets.CASHUP_WEBMAIL_PG_USER }}
-          CASHUP_WEBMAIL_PG_PASS=${{ secrets.CASHUP_WEBMAIL_PG_PASS }}
-          CASHUP_WEBMAIL_GMAIL_PG_USER=${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_USER }}
-          CASHUP_WEBMAIL_GMAIL_PG_PASS=${{ secrets.CASHUP_WEBMAIL_GMAIL_PG_PASS }}
-          CASHUP_EMAIL_PARA_PG=${{ secrets.CASHUP_EMAIL_PARA_PG }}
           EOF
 
       - name: Executar relatório de orçamentos
