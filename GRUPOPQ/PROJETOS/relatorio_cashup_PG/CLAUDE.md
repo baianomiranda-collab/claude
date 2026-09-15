@@ -12,11 +12,12 @@ cd "C:\Claude\GRUPOPQ\PROJETOS\relatorio_cashup_PG"
 py -3 relatorio_cashup.py
 ```
 
-## O que o script faz
+## O que o script faz (fluxo simplificado, 15/09/2026)
 O relatório é gerado pelo próprio Cash-UP (botão **"Relatório Orçamentos"**), que **não** oferece
-download direto — ele envia o arquivo por email, de forma assíncrona ("em alguns minutos"). O script
-dispara essa geração e depois encaminha o email recebido em **duas etapas**, até chegar nos
-destinatários finais:
+download direto — ele envia o arquivo por email, de forma assíncrona ("em alguns minutos"), direto
+pro email cadastrado no login usado. Desde 15/09/2026 o login (`CASHUP_PG_USER`/`CASHUP_PG_PASS`) é
+**graco@grupopq.com** — o próprio destinatário final do relatório — então não existe mais
+encaminhamento nenhum: o script só dispara e encerra.
 
 1. Login automático no Cash-UP (`https://www.cashup-pgquimica.com.br/`) com `CASHUP_PG_USER`/`CASHUP_PG_PASS`.
 2. Abre o menu **Orçamentos** — clica no item do menu superior e, se aparecer o submenu
@@ -24,22 +25,26 @@ destinatários finais:
    aplica por padrão o filtro **Período de Criação = últimos ~30 dias (rolling)**.
 3. Clica em **"Carregar Filtros"** (carrega os filtros salvos) e, na sequência, em
    **"Relatório Orçamentos"**. O Cash-UP responde com o aviso "O Relatório de Orçamentos será
-   enviado para seu email cadastrado no Cash-UP em alguns minutos." e fecha o navegador (não há
-   nada mais a fazer no browser).
-4. Faz **polling via IMAP** na caixa de `CASHUP_WEBMAIL_PG_USER` (bruno@lmtreina.com.br, webmail LM Treina)
-   até chegar um email novo de `cashup@cashup-pgquimica.com.br` com assunto
-   `Excel Relatório Orçamento - Cash-UP` (checa a cada 20s, até 15 min).
-5. **Encaminha esse email** (RFC822 completo, com o anexo original — não recompõe nada) para
-   `CASHUP_WEBMAIL_GMAIL_PG_USER` (sistemaorganon@gmail.com), autenticando como `CASHUP_WEBMAIL_PG_USER`.
-6. Faz polling via IMAP na caixa do Gmail (`sistemaorganon@gmail.com`) até esse encaminhamento
-   chegar — de `bruno@lmtreina.com.br`, mesmo assunto (checa a cada 20s, até 10 min).
-7. **Encaminha esse email** (de novo, sem recompor) para os destinatários finais em `CASHUP_EMAIL_PARA_PG`
-   (lista separada por vírgula), autenticando como `CASHUP_WEBMAIL_GMAIL_PG_USER`.
+   enviado para seu email cadastrado no Cash-UP em alguns minutos." e fecha o navegador.
+4. **Encerra.** O Cash-UP entrega direto em `graco@grupopq.com` — nenhuma espera, nenhum
+   encaminhamento.
 
-Fluxo 100% automático — sem pausa manual, sem interação humana. Só existe espera (polling), nunca
-intervenção.
+> **Motivo da mudança:** o login antigo (`bruno@lmtreina.com.br`) exigia dois saltos de
+> encaminhamento (LM Treina → Gmail → destinatários finais) só porque ele mesmo não era o
+> destinatário final — e esses dois saltos concentravam a maior parte das falhas históricas do
+> projeto (timeouts de IMAP, pasta errada, charset de assunto, etc., ver seções abaixo). Trocando
+> o login pelo do próprio destinatário final, o Cash-UP já entrega no lugar certo sozinho.
+>
+> As funções de IMAP/SMTP (`aguardar_email`, `encaminhar_email`, etc.) continuam no
+> `relatorio_cashup.py`, só que **suspensas** (não chamadas por `main()`) — não foram apagadas
+> caso precise reverter. `CASHUP_WEBMAIL_PG_*`, `CASHUP_WEBMAIL_GMAIL_PG_*` e
+> `CASHUP_EMAIL_PARA_PG` não são mais lidas nem obrigatórias.
 
-## Correção de roteamento de pasta (28/08/2026)
+As seções abaixo (roteamento de pasta, tag de assunto, salto intermediário Gmail etc.) descrevem o
+**fluxo antigo, agora suspenso** — mantidas como referência histórica caso o encaminhamento precise
+ser reativado.
+
+## Correção de roteamento de pasta (28/08/2026) — fluxo antigo, suspenso
 
 Existe uma **regra de filtro na própria caixa** `bruno@lmtreina.com.br` que desvia automaticamente
 qualquer email de domínio `cashup-*.com.br` (tanto PG quanto PQ) direto para a pasta
@@ -179,7 +184,7 @@ Roda sozinho todo dia às **18h07 (horário de Brasília)**, mas **não** mais v
 do GitHub Actions — esse trigger foi **removido em 29/08/2026** porque o agendamento nativo do
 GitHub atrasava (já visto ~6h de atraso em dia de baixa atividade do repo, execução que deveria
 sair às 18h07 saiu de fato 00h07 da madrugada seguinte). No lugar, o disparo vem de um workflow no
-**n8n** (`Disparo Cash-UP PG/PQ (GitHub Actions)`, instância `organon12.app.n8n.cloud`, node
+**n8n** (`Disparo Cash-UP PG/PQ (GitHub Actions)`, instância `organon13.app.n8n.cloud`, node
 "Agendamento PG - 18h07" → node GitHub "Disparar Cash-UP PG"), que chama a API
 `workflow_dispatch` do GitHub no horário exato (timezone do workflow fixado em
 `America/Sao_Paulo`). `.github/workflows/relatorio-cashup-pg.yml` mantém só o trigger
@@ -241,7 +246,7 @@ o mesmo padrão de nome sem sufixo `_PG`/`_PQ`):
 - `MEGAAPI_TOKEN` — o mesmo Bearer token da credencial "MegaAPI Organon" no n8n.
 - `MEGAAPI_WHATSAPP_DESTINO` — número que recebe os avisos (formato `55DDNNNNNNNNN`).
 - `N8N_WEBHOOK_PG_CONCLUIDO` — URL de produção do webhook "Recebe resultado PG"
-  (`https://organon12.app.n8n.cloud/webhook/cashup-pg-resultado-x9k2m7qz`). Guardado como
+  (`https://organon13.app.n8n.cloud/webhook/cashup-pg-resultado-x9k2m7qz`). Guardado como
   secret (não hardcoded no YAML) porque o repositório é público e o webhook não exige
   autenticação — qualquer um com a URL poderia forçar um disparo da PQ.
 
