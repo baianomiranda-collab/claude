@@ -1,0 +1,205 @@
+{
+    "noOpNodes":  [
+                      {
+                          "name":  "No Operation, do nothing",
+                          "id":  "98b3cfda-26af-4476-8cf5-94567729b1f6"
+                      },
+                      {
+                          "name":  "No Operation, do nothing1",
+                          "id":  "9a91d06d-8f8e-46ae-81cb-6ccbd2dfa88f"
+                      },
+                      {
+                          "name":  "No Operation, do nothing2",
+                          "id":  "b5b6f339-e138-4781-baca-6734f5692bfc"
+                      },
+                      {
+                          "name":  "No Operation, do nothing5",
+                          "id":  "6bec45cd-a6a7-4805-96e4-0091d231d975"
+                      },
+                      {
+                          "name":  "No Operation, do nothing3",
+                          "id":  "e9b468d9-bdfd-42b0-85ad-cce2b4703ab0"
+                      },
+                      {
+                          "name":  "No Operation, do nothing4",
+                          "id":  "890f45f3-0214-4aa4-a3c9-b3bdf48348da"
+                      },
+                      {
+                          "name":  "No Operation, do nothing6",
+                          "id":  "4afa9386-51f8-4c25-83d6-ea573c21fe70"
+                      }
+                  ],
+    "stickyNotes":  [
+                        {
+                            "name":  "Sticky Note",
+                            "id":  "d9e16cbf-0c9e-4546-9551-f3cfef096a13"
+                        },
+                        {
+                            "name":  "Sticky Note1",
+                            "id":  "d19da017-423c-447e-80fc-de1a4c242e41"
+                        },
+                        {
+                            "name":  "Sticky Note2",
+                            "id":  "56ee9ce6-ed2a-4535-a59b-3f6f7cdd9bf9"
+                        },
+                        {
+                            "name":  "Sticky Note3",
+                            "id":  "890d9ba7-de59-442f-b5a6-d751f79b3ae6"
+                        },
+                        {
+                            "name":  "Sticky Note4",
+                            "id":  "8e11d3e8-58ee-46c4-9b07-62e3edc7e121"
+                        },
+                        {
+                            "name":  "Sticky Note5",
+                            "id":  "9ce2e89c-8d77-4f7e-a81b-426378141b48"
+                        },
+                        {
+                            "name":  "Sticky Note6",
+                            "id":  "25dd620f-9858-4380-bf5c-d98ae38a76af"
+                        },
+                        {
+                            "name":  "Sticky Note8",
+                            "id":  "f052e04a-340b-4914-8621-806050554684"
+                        },
+                        {
+                            "name":  "Sticky Note9",
+                            "id":  "574e4ffd-1f7d-4eb9-ab66-82d41bc6d2a1"
+                        },
+                        {
+                            "name":  "Sticky Note10",
+                            "id":  "00c3890d-1366-4409-a99a-d9067801355c"
+                        },
+                        {
+                            "name":  "Sticky Note7",
+                            "id":  "86686173-4df4-4564-abb7-5df35b51add5"
+                        },
+                        {
+                            "name":  "Sticky Note11",
+                            "id":  "4e7f2a5f-0c19-4ff3-adf0-3ce40b33a662"
+                        },
+                        {
+                            "name":  "Sticky Note12",
+                            "id":  "a4c97275-4521-46ba-b851-c50e679a018b"
+                        },
+                        {
+                            "name":  "Sticky Note13",
+                            "id":  "44e5b351-244d-4196-a629-cf7488ce2547"
+                        },
+                        {
+                            "name":  "Sticky Note22",
+                            "id":  "b3e13415-9d1a-45ba-aaf5-ce98c4d70dd2"
+                        },
+                        {
+                            "name":  "Sticky Note14",
+                            "id":  "4f38a6a9-3bf0-43fe-98c2-124e35774727"
+                        },
+                        {
+                            "name":  "Sticky Note15",
+                            "id":  "48929f42-4ceb-4b1a-8418-2d38b264c894"
+                        },
+                        {
+                            "name":  "Sticky Note16",
+                            "id":  "1e8dd9fe-ac0e-48a6-9768-0ccc226de7cf"
+                        },
+                        {
+                            "name":  "Sticky Note17",
+                            "id":  "7b6ea68e-8bdd-4daa-a1ab-c7a2c79dad1a"
+                        },
+                        {
+                            "name":  "Sticky Note18",
+                            "id":  "a4561b27-4a06-45a6-a1ff-2c750a823831"
+                        },
+                        {
+                            "name":  "Sticky Note19",
+                            "id":  "8d46e3a8-9465-4e32-8e0d-5ca02f197469"
+                        },
+                        {
+                            "name":  "Sticky Note20",
+                            "id":  "a77c7a70-8189-4ece-82f9-1280d185be25"
+                        },
+                        {
+                            "name":  "Sticky Note21",
+                            "id":  "28c2855d-cf6d-4df1-9949-f9864d4163f1"
+                        }
+                    ],
+    "redisNodes":  [
+                       {
+                           "name":  "Redis",
+                           "id":  "cdb5a592-c4d2-410f-9bd4-4ac44fa9f6e4",
+                           "operation":  "push"
+                       },
+                       {
+                           "name":  "Redis_Buffer1",
+                           "id":  "3056f740-1bd0-4d65-b764-7acf6972bc9f",
+                           "operation":  "get"
+                       },
+                       {
+                           "name":  "Redis_Buffer2",
+                           "id":  "acb16299-dc8d-4377-ba76-712c03a5cdfc",
+                           "operation":  "get"
+                       },
+                       {
+                           "name":  "Redis1",
+                           "id":  "cae933f8-62e5-427d-bbff-b85a717bdc85",
+                           "operation":  "delete"
+                       },
+                       {
+                           "name":  "Redis2",
+                           "id":  "b4463c72-6d2a-4c4b-83a7-dca794714bc8",
+                           "operation":  "push"
+                       },
+                       {
+                           "name":  "Redis3",
+                           "id":  "aeb3f9f2-47be-4a33-beb9-d9bde6296938",
+                           "operation":  "push"
+                       },
+                       {
+                           "name":  "Redis4",
+                           "id":  "4e61b47f-b639-4455-ae59-bbe74cabf2ad",
+                           "operation":  "push"
+                       },
+                       {
+                           "name":  "Redis5",
+                           "id":  "28a9790b-3611-414e-98ac-75ba4dd13b2e",
+                           "operation":  "push"
+                       },
+                       {
+                           "name":  "Redis7",
+                           "id":  "309c3f87-5edf-4a2a-b64a-1d9acb972da9",
+                           "operation":  "get"
+                       },
+                       {
+                           "name":  "Redis9",
+                           "id":  "50870aff-5140-447d-813a-5fe9293bcb5a",
+                           "operation":  "push"
+                       },
+                       {
+                           "name":  "Desativa Agente",
+                           "id":  "85e093dd-b841-4f3e-8a40-759f7641de04",
+                           "operation":  "set"
+                       }
+                   ],
+    "downloadNodes":  [
+                          {
+                              "name":  "downloadMediaMessage (audio)",
+                              "id":  "268cbc90-7830-47be-87ef-997ec9c9a4bc",
+                              "url":  "https://apinocode02.megaapi.com.br/rest/instance/downloadMediaMessage/megacode-Me9pYiqOK3u"
+                          },
+                          {
+                              "name":  "downloadMediaMessage document",
+                              "id":  "05bb8ae0-8fd3-4317-8f72-038344b6ea41",
+                              "url":  "https://apinocode02.megaapi.com.br/rest/instance/downloadMediaMessage/megacode-Me9pYiqOK3u"
+                          },
+                          {
+                              "name":  "downloadMediaMessage (imagem)",
+                              "id":  "15a20414-b250-47d5-bbe1-7ee038b8d68e",
+                              "url":  "=https://apinocode02.megaapi.com.br/rest/instance/downloadMediaMessage/megacode-Me9pYiqOK3u"
+                          },
+                          {
+                              "name":  "downloadMediaMessage document1",
+                              "id":  "3a2cd72c-e4a9-4ccb-9cb9-a22e9b817ad0",
+                              "url":  "https://apinocode02.megaapi.com.br/rest/instance/downloadMediaMessage/megacode-Me9pYiqOK3u"
+                          }
+                      ]
+}
